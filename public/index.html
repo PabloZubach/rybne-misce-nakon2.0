@@ -3,162 +3,315 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Рибне місце · Яворів</title>
-<meta name="description" content="Меню, бронювання столу та замовлення з собою онлайн">
-<meta name="theme-color" content="#0f4c5c">
+<title>Рибне місце · Наконечне</title>
+<meta name="description" content="Свіжа та копчена риба щодня. Меню, бронювання столу та замовлення з собою онлайн">
+<meta name="theme-color" content="#0a1f38">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" href="/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/icon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600;800&family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/style.css">
 <style>
-header{background:var(--hero);color:#fff;position:relative;overflow:hidden}
-header .bgimg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.35}
-header .wrap{position:relative;padding:20px 16px 56px}
-nav{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.logo{font-weight:700;font-size:20px;letter-spacing:.5px;text-transform:uppercase}
-.navlinks a{color:#d7eef3;text-decoration:none;font-size:14px;margin-left:14px}
-h1{font-weight:700;font-size:clamp(30px,6vw,48px);line-height:1.1;margin:44px 0 12px;max-width:640px}
-.lead{color:#e3f1f4;max-width:520px}
-.cta{display:flex;gap:12px;margin-top:24px;flex-wrap:wrap}
-.btn.ghost{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.4)}
-.info{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:-28px;position:relative}
-.info div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px}
-.info b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:600}
-section{margin:44px 0}
-.menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.dish{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
-.dish .ph{aspect-ratio:4/3;background:var(--chip) center/cover;display:grid;place-items:center;font-size:38px}
-.dish .body{padding:14px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
-.dish h3{font-size:16px}
-.dish p{color:var(--muted);font-size:13px;flex:1}
-.price{font-weight:700}
+:root{
+  --navy:#0a1f38;--navy-2:#12325a;--wave:#2f6fb0;--foam:#dbe9f6;
+  --sand:#f5efe4;--paper:#fffdf9;--ink:#0f1c2b;--muted:#5e6b78;--line:#e7dfd1;
+  --ember:#e8792f;--ember-2:#f3a24a;--ember-ink:#1f1006;--ok:#2f8f5b;--bad:#c2412d;
+  --chip:#efe7da;--bg:var(--sand);--card:var(--paper)
+}
+@media (prefers-color-scheme: dark){:root{
+  --sand:#0b1624;--paper:#122133;--ink:#eef3f8;--muted:#9fb0c2;--line:#22364d;--chip:#1a2c42;--foam:#9cc3ea;
+  --bg:var(--sand);--card:var(--paper)}}
+body{background:var(--sand);color:var(--ink)}
+.wrap{max-width:1120px}
+
+/* ---------- HERO ---------- */
+.hero{position:relative;background:var(--navy);color:#fff;overflow:hidden;isolation:isolate}
+.hero .photo{position:absolute;inset:0;background:center/cover no-repeat;opacity:.28;z-index:-2}
+.hero::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(1200px 500px at 85% -10%,rgba(47,111,176,.55),transparent 60%),
+             radial-gradient(700px 400px at 0% 110%,rgba(232,121,47,.22),transparent 60%)}
+.hero nav{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:20px 0}
+.brand{display:flex;align-items:center;gap:10px;font-family:Unbounded,sans-serif;font-weight:800;font-size:18px;letter-spacing:.06em;text-transform:uppercase}
+.brand .mark{width:38px;height:38px;border-radius:11px;background:var(--ember);display:grid;place-items:center}
+.navlinks{display:flex;gap:6px}
+.navlinks a{color:var(--foam);text-decoration:none;font-weight:700;font-size:14px;padding:8px 12px;border-radius:999px}
+.navlinks a:hover{background:rgba(255,255,255,.08)}
+@media(max-width:640px){.navlinks{display:none}}
+.hero-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:32px;align-items:end;padding:48px 0 140px}
+@media(max-width:860px){.hero-grid{grid-template-columns:1fr;padding:28px 0 120px}}
+.kicker{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ember-2);background:rgba(243,162,74,.12);border:1px solid rgba(243,162,74,.35);padding:6px 12px;border-radius:999px}
+.kicker i{width:7px;height:7px;border-radius:50%;background:#5ce08d;box-shadow:0 0 0 4px rgba(92,224,141,.18)}
+.hero h1{font-family:Unbounded,sans-serif;font-weight:800;font-size:clamp(38px,7.2vw,84px);line-height:.98;letter-spacing:-.02em;margin:18px 0 18px}
+.hero h1 em{font-style:normal;color:var(--ember-2)}
+.hero .lead{font-size:clamp(16px,2vw,19px);color:#cfe0f1;max-width:520px}
+.cta{display:flex;gap:12px;margin-top:28px;flex-wrap:wrap}
+.btn.big{padding:16px 22px;font-size:16px;border-radius:14px}
+.btn.ember{background:var(--ember);color:#fff}
+.btn.ember:hover{background:#d86a22}
+.btn.glass{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,255,255,.28)}
+.btn.glass:hover{background:rgba(255,255,255,.14)}
+.hero-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:20px;padding:18px 20px;backdrop-filter:blur(8px);font-size:14px}
+.hero-card .r{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+.hero-card .r:last-child{border-bottom:0}
+.hero-card .ic{flex:0 0 34px;height:34px;border-radius:10px;background:rgba(255,255,255,.08);display:grid;place-items:center}
+.hero-card b{display:block;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--foam);opacity:.8;font-weight:700}
+.hero-card a{color:#fff;text-decoration:none}
+.hero-card a:hover{text-decoration:underline}
+.waves{position:absolute;left:0;right:0;bottom:-1px;line-height:0}
+.waves svg{width:100%;height:120px;display:block}
+
+/* ---------- FEATURES ---------- */
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:-56px;position:relative;z-index:2}
+@media(max-width:760px){.features{grid-template-columns:1fr}}
+.feature{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 12px 30px -18px rgba(10,31,56,.35)}
+.feature .ic{flex:0 0 46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--chip)}
+.feature h3{font-size:16px;margin-bottom:2px}
+.feature p{font-size:14px;color:var(--muted)}
+
+/* ---------- SECTIONS ---------- */
+section{margin:76px 0}
+.sec-head{display:flex;justify-content:space-between;align-items:end;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.eyebrow{font-weight:800;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ember)}
+h2{font-family:Unbounded,sans-serif;font-weight:600;font-size:clamp(26px,4vw,40px);letter-spacing:-.01em;margin:6px 0 0}
+.sub{color:var(--muted);font-size:15px;margin:0}
+.tabs{gap:8px}
+.tab{background:transparent;border:1.5px solid var(--line);color:var(--ink);padding:9px 16px}
+.tab.on{background:var(--navy);border-color:var(--navy);color:#fff}
+@media (prefers-color-scheme: dark){.tab.on{background:var(--ember);border-color:var(--ember);color:#fff}}
+
+/* ---------- MENU ---------- */
+.menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.dish{background:var(--paper);border:1px solid var(--line);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s}
+.dish:hover{transform:translateY(-3px);box-shadow:0 18px 34px -22px rgba(10,31,56,.45)}
+.dish .ph{aspect-ratio:4/3;background:linear-gradient(160deg,var(--navy-2),var(--navy)) center/cover;position:relative;display:grid;place-items:center}
+.dish .ph svg{opacity:.5}
+.dish .ph.has svg{display:none}
+.dish .w{position:absolute;left:12px;bottom:12px;background:rgba(10,31,56,.78);color:#fff;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}
+.dish .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
+.dish h3{font-size:17px;line-height:1.25}
+.dish p{color:var(--muted);font-size:14px;flex:1}
+.dish .row{margin-top:6px}
+.price{font-family:Unbounded,sans-serif;font-weight:600;font-size:18px}
+.price small{font-family:Manrope,sans-serif;font-size:13px;color:var(--muted);font-weight:600}
 .qty{display:flex;align-items:center;gap:8px}
-.qty button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--chip);color:var(--ink);font-size:18px;cursor:pointer}
-.tables{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px;margin:6px 0 4px}
-.t{border:1.5px solid var(--line);border-radius:12px;padding:10px 4px;text-align:center;cursor:pointer;background:var(--bg);font-size:13px;color:var(--ink)}
-.t b{display:block;font-size:14px}
-.t.busy{opacity:.35;cursor:not-allowed;text-decoration:line-through}
-.t.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent)}
-.legend{font-size:12px;color:var(--muted)}
-.cartline{display:flex;justify-content:space-between;gap:10px;font-size:14px;padding:7px 0;border-bottom:1px dashed var(--line)}
-.total{display:flex;justify-content:space-between;font-weight:700;font-size:18px;margin:12px 0 0}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
-.gallery img{aspect-ratio:1;object-fit:cover;border-radius:12px;width:100%}
-.cartbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-footer{color:var(--muted);font-size:13px;text-align:center;padding:24px 16px 90px;border-top:1px solid var(--line)}
-footer a{margin:0 6px}
+.qty button{width:38px;height:38px;border-radius:12px;border:0;background:var(--chip);color:var(--ink);font-size:20px;font-weight:700;cursor:pointer}
+.qty button.add{background:var(--ember);color:#fff}
+.qty b{min-width:18px;text-align:center}
+
+/* ---------- BOOKING ---------- */
+.book-wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:20px;align-items:start}
+@media(max-width:860px){.book-wrap{grid-template-columns:1fr}}
+.book-side{background:var(--navy);color:#fff;border-radius:22px;padding:28px;position:relative;overflow:hidden}
+.book-side::after{content:"";position:absolute;right:-60px;bottom:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(232,121,47,.45),transparent 70%)}
+.book-side h2{color:#fff}
+.book-side p{color:#cfe0f1;margin-top:10px}
+.steps{list-style:none;padding:0;margin:22px 0 0;display:grid;gap:12px}
+.steps li{display:flex;gap:12px;align-items:center;font-weight:600}
+.steps span{flex:0 0 30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);display:grid;place-items:center;font-size:13px;font-weight:800;color:var(--ember-2)}
+.panel{border-radius:22px;padding:24px;background:var(--paper)}
+.switch{display:grid;grid-template-columns:1fr 1fr;background:var(--chip);border-radius:14px;padding:4px;margin-bottom:18px}
+.switch button{border:0;background:transparent;color:var(--ink);font:700 15px Manrope,sans-serif;padding:12px;border-radius:11px;cursor:pointer}
+.switch button.on{background:var(--paper);box-shadow:0 2px 8px rgba(0,0,0,.08)}
+input,select{background:var(--sand);border-radius:12px;padding:13px 14px}
+input:focus,select:focus{outline:2px solid var(--ember);outline-offset:1px}
+.tables{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))}
+.t{border-radius:14px;padding:12px 6px;background:var(--sand)}
+.t .seat{display:flex;justify-content:center;gap:3px;margin-top:6px}
+.t .seat i{width:6px;height:6px;border-radius:50%;background:var(--muted);opacity:.6}
+.t.sel{border-color:var(--ember);background:color-mix(in srgb,var(--ember) 14%,var(--paper))}
+.t.sel .seat i{background:var(--ember);opacity:1}
+.total{font-family:Unbounded,sans-serif;font-weight:600}
+
+/* ---------- GALLERY ---------- */
+.gallery{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:180px;gap:10px}
+.gallery img{width:100%;height:100%;object-fit:cover;border-radius:16px}
+.gallery img:first-child{grid-column:span 2;grid-row:span 2}
+@media(max-width:700px){.gallery{grid-template-columns:repeat(2,1fr);grid-auto-rows:140px}}
+
+/* ---------- FIND US ---------- */
+.find{display:grid;grid-template-columns:1fr 1.3fr;gap:20px}
+@media(max-width:860px){.find{grid-template-columns:1fr}}
+.find .card{background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:24px;display:grid;gap:18px;align-content:start}
+.find .card b{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.find .card a{color:var(--ink);font-weight:700;text-decoration:none}
+.find .card a:hover{color:var(--ember)}
+.map{border-radius:22px;overflow:hidden;border:1px solid var(--line);min-height:340px;background:var(--chip)}
+.map iframe{width:100%;height:100%;min-height:340px;border:0;display:block}
+
+/* ---------- FOOTER / CART ---------- */
+footer{background:var(--navy);color:#cfe0f1;border:0;padding:40px 16px 100px;text-align:left}
+footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+footer a{color:#fff;font-weight:700;text-decoration:none;margin-left:16px}
+.cartbar{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:5;background:var(--ember)!important;color:#fff!important;border-radius:999px;padding:14px 22px;box-shadow:0 14px 30px -10px rgba(232,121,47,.7)}
 </style>
 </head>
 <body>
-<header>
-  <div class="bgimg" id="hero-bg"></div>
+
+<header class="hero">
+  <div class="photo" id="hero-bg"></div>
   <div class="wrap">
     <nav>
-      <div class="logo" id="s-name">Рибне місце</div>
-      <div class="navlinks"><a href="#menu">Меню</a><a href="#book">Бронювання</a></div>
+      <div class="brand"><span class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-4 8-6 12-4l4-3v14l-4-3c-4 2-9 0-12-4z"/><circle cx="8" cy="11.5" r=".6" fill="#fff"/></svg></span><span id="s-name">Рибне місце</span></div>
+      <div class="navlinks"><a href="#menu">Меню</a><a href="#book">Бронювання</a><a href="#find">Контакти</a></div>
     </nav>
-    <h1 id="s-title">Свіжа риба в Яворові</h1>
-    <p class="lead" id="s-tagline"></p>
-    <div class="cta">
-      <button class="btn primary" id="cta-table" onclick="go('table')">Забронювати стіл</button>
-      <button class="btn ghost" id="cta-take" onclick="go('takeaway')">Замовити з собою</button>
+    <div class="hero-grid">
+      <div>
+        <span class="kicker"><i></i><span id="s-open">Сьогодні працюємо</span></span>
+        <h1>Свіжа та <em>копчена</em> риба щодня</h1>
+        <p class="lead" id="s-tagline"></p>
+        <div class="cta">
+          <button class="btn big ember" id="cta-table" onclick="go('table')">Забронювати стіл</button>
+          <button class="btn big glass" id="cta-take" onclick="go('takeaway')">Замовити з собою</button>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="r"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><b>Години роботи</b><span id="s-hours"></span></div></div>
+        <div class="r"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg></div><div><b>Адреса</b><a id="s-address" target="_blank" rel="noopener"></a></div></div>
+        <div class="r"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></div><div><b>Телефони</b><span id="s-phone">—</span></div></div>
+      </div>
     </div>
+  </div>
+  <div class="waves" aria-hidden="true">
+    <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+      <path d="M0 70 C 120 30 240 30 360 62 S 600 100 720 66 S 960 22 1080 56 S 1320 96 1440 60 V120 H0Z" fill="#2f6fb0" opacity=".35"/>
+      <path d="M0 86 C 160 54 300 58 440 82 S 720 112 860 84 S 1160 50 1300 76 S 1400 92 1440 86 V120 H0Z" fill="#dbe9f6" opacity=".25"/>
+      <path d="M0 100 C 200 80 360 84 520 98 S 840 118 1000 100 S 1300 84 1440 98 V120 H0Z" fill="var(--sand)"/>
+    </svg>
   </div>
 </header>
 
 <main class="wrap">
-  <div class="info">
-    <div><b>Години роботи</b><span id="s-hours"></span></div>
-    <div><b>Адреса</b><a id="s-address" target="_blank" rel="noopener"></a></div>
-    <div><b>Телефон</b><a id="s-phone"></a></div>
+  <div class="features">
+    <div class="feature"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f6fb0" stroke-width="2" stroke-linecap="round"><path d="M2 12c3-4 8-6 12-4l5-3v14l-5-3c-4 2-9 0-12-4z"/></svg></div><div><h3>Свіжа риба щодня</h3><p>Короп, форель, лосось, вугор та інша риба щодня</p></div></div>
+    <div class="feature"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e8792f" stroke-width="2" stroke-linecap="round"><path d="M12 3c2 3-2 4 0 7M8 5c1.5 2-1 3 0 5M16 5c1.5 2-1 3 0 5"/><rect x="4" y="12" width="16" height="8" rx="2"/></svg></div><div><h3>Коптимо на місці</h3><p>Власна коптильня та гриль, риба готується просто при вас</p></div></div>
+    <div class="feature"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f8f5b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></div><div><h3>Тут або з собою</h3><p>Забронюйте стіл чи замовте онлайн і заберіть без черги</p></div></div>
   </div>
 
   <section id="menu">
-    <h2>Меню</h2>
-    <p class="sub" id="menu-sub">Натисніть «+», щоб додати страву в замовлення з собою</p>
+    <div class="sec-head">
+      <div><div class="eyebrow">Наше меню</div><h2>Що сьогодні на вогні</h2></div>
+      <p class="sub" id="menu-sub">Натисніть «+», щоб додати страву в замовлення з собою</p>
+    </div>
     <div class="tabs" id="cats"></div>
     <div class="menu" id="dishes"><div class="empty">Завантаження меню…</div></div>
   </section>
 
   <section id="book">
-    <h2>Бронювання та замовлення</h2>
-    <div class="tabs">
-      <button class="tab on" id="m-table" onclick="mode('table')">Стіл на місці</button>
-      <button class="tab" id="m-takeaway" onclick="mode('takeaway')">З собою</button>
+    <div class="book-wrap">
+      <div class="book-side">
+        <div class="eyebrow" style="color:var(--ember-2)">Онлайн, без дзвінків</div>
+        <h2>Бронювання та замовлення</h2>
+        <p>Займає менше хвилини. Ми одразу отримуємо вашу заявку і, якщо потрібно, передзвонимо.</p>
+        <ul class="steps">
+          <li><span>1</span>Оберіть стіл або страви</li>
+          <li><span>2</span>Вкажіть час та телефон</li>
+          <li><span>3</span>Приходьте, ми чекаємо</li>
+        </ul>
+      </div>
+
+      <div class="panel">
+        <div class="switch">
+          <button id="m-table" class="on" onclick="mode('table')">Стіл на місці</button>
+          <button id="m-takeaway" onclick="mode('takeaway')">З собою</button>
+        </div>
+
+        <form id="p-table" onsubmit="book(event)">
+          <div class="grid2">
+            <div><label for="b-date">Дата</label><input type="date" id="b-date" required></div>
+            <div><label for="b-time">Час</label><select id="b-time" required></select></div>
+            <div><label for="b-guests">Гостей</label><select id="b-guests"></select></div>
+            <div><label for="b-name">Ваше ім'я</label><input id="b-name" autocomplete="name" required maxlength="60"></div>
+          </div>
+          <div class="mt"><label for="b-phone">Телефон</label><input id="b-phone" type="tel" autocomplete="tel" placeholder="+380" required></div>
+          <div class="mt"><label>Оберіть стіл</label>
+            <div class="tables" id="tables"></div>
+            <div class="legend">Закреслені столи на цей час зайняті або замалі для вашої компанії</div>
+          </div>
+          <div class="mt"><label for="b-comment">Побажання (необов'язково)</label><input id="b-comment" maxlength="300" placeholder="День народження, дитячий стільчик…"></div>
+          <button class="btn big ember mt" style="width:100%" id="b-btn">Забронювати стіл</button>
+          <div id="b-msg"></div>
+        </form>
+
+        <form id="p-takeaway" hidden onsubmit="order(event)">
+          <div id="cart"></div>
+          <div class="grid2 mt">
+            <div><label for="o-time">Заберу о</label><select id="o-time" required></select></div>
+            <div><label for="o-name">Ваше ім'я</label><input id="o-name" autocomplete="name" required maxlength="60"></div>
+          </div>
+          <div class="mt"><label for="o-phone">Телефон</label><input id="o-phone" type="tel" autocomplete="tel" placeholder="+380" required></div>
+          <div class="mt"><label for="o-comment">Коментар (необов'язково)</label><input id="o-comment" maxlength="300"></div>
+          <p class="sub mt">Оплата при отриманні: готівкою або карткою.</p>
+          <button class="btn big ember mt" style="width:100%" id="o-btn">Оформити замовлення</button>
+          <div id="o-msg"></div>
+        </form>
+      </div>
     </div>
-
-    <form class="panel" id="p-table" onsubmit="book(event)">
-      <div class="grid2">
-        <div><label for="b-date">Дата</label><input type="date" id="b-date" required></div>
-        <div><label for="b-time">Час</label><select id="b-time" required></select></div>
-        <div><label for="b-guests">Кількість гостей</label><select id="b-guests"></select></div>
-        <div><label for="b-name">Ваше ім'я</label><input id="b-name" autocomplete="name" required maxlength="60"></div>
-      </div>
-      <div class="mt"><label for="b-phone">Телефон</label><input id="b-phone" type="tel" autocomplete="tel" placeholder="+380" required></div>
-      <div class="mt"><label>Оберіть стіл</label>
-        <div class="tables" id="tables"></div>
-        <div class="legend">Закреслені столи на цей час уже зайняті або замалі для вашої компанії</div>
-      </div>
-      <div class="mt"><label for="b-comment">Побажання (необов'язково)</label><input id="b-comment" maxlength="300" placeholder="День народження, дитячий стільчик…"></div>
-      <button class="btn primary mt" style="width:100%" id="b-btn">Забронювати</button>
-      <div id="b-msg"></div>
-    </form>
-
-    <form class="panel" id="p-takeaway" hidden onsubmit="order(event)">
-      <div id="cart"></div>
-      <div class="grid2 mt">
-        <div><label for="o-time">Заберу о</label><select id="o-time" required></select></div>
-        <div><label for="o-name">Ваше ім'я</label><input id="o-name" autocomplete="name" required maxlength="60"></div>
-      </div>
-      <div class="mt"><label for="o-phone">Телефон</label><input id="o-phone" type="tel" autocomplete="tel" placeholder="+380" required></div>
-      <div class="mt"><label for="o-comment">Коментар (необов'язково)</label><input id="o-comment" maxlength="300"></div>
-      <p class="sub mt">Оплата при отриманні: готівкою або карткою.</p>
-      <button class="btn primary" style="width:100%" id="o-btn">Оформити замовлення</button>
-      <div id="o-msg"></div>
-    </form>
   </section>
 
   <section id="gallery-sec" hidden>
-    <h2>Атмосфера</h2>
+    <div class="sec-head"><div><div class="eyebrow">Атмосфера</div><h2>Завітайте до нас</h2></div></div>
     <div class="gallery" id="gallery"></div>
+  </section>
+
+  <section id="find">
+    <div class="sec-head"><div><div class="eyebrow">Контакти</div><h2>Як нас знайти</h2></div></div>
+    <div class="find">
+      <div class="card">
+        <div><b>Адреса</b><a id="f-address" target="_blank" rel="noopener"></a></div>
+        <div><b>Години роботи</b><span id="f-hours"></span></div>
+        <div><b>Телефони</b><span id="f-phone">—</span></div>
+        <a class="btn ember" id="f-route" target="_blank" rel="noopener" style="color:#fff;justify-self:start">Прокласти маршрут</a>
+      </div>
+      <div class="map"><iframe id="map" title="Карта" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    </div>
   </section>
 </main>
 
-<button class="btn dark cartbar" id="cartbar" hidden onclick="go('takeaway')"></button>
+<button class="btn cartbar" id="cartbar" hidden onclick="go('takeaway')"></button>
 <footer>
-  <span id="f-name">Рибне місце</span> · Яворів
-  <div class="mt"><a id="f-tiktok" target="_blank" rel="noopener" hidden>TikTok</a><a id="f-insta" target="_blank" rel="noopener" hidden>Instagram</a></div>
+  <div class="wrap">
+    <div><b id="f-name" style="color:#fff">Рибне місце</b> · свіжа та копчена риба щодня</div>
+    <div><a id="f-tiktok" target="_blank" rel="noopener" hidden>TikTok</a><a id="f-insta" target="_blank" rel="noopener" hidden>Instagram</a></div>
+  </div>
 </footer>
-<div class="toast" id="toast"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const safeUrl = (u) => /^(https?:\/\/|\/uploads\/)/.test(u || '') ? u : '';
+const FISH = '<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#dbe9f6" stroke-width="1.4" stroke-linecap="round"><path d="M2 12c3-4 8-6 12-4l5-3v14l-5-3c-4 2-9 0-12-4z"/><circle cx="7" cy="11.5" r=".5" fill="#dbe9f6"/></svg>';
+const MAP_LAT = 49.9344979, MAP_LNG = 23.352096;
 let site = null, cat = 0, selT = null;
 const cart = load();
 
 function load() { try { return JSON.parse(localStorage.getItem('cart') || '{}'); } catch { return {}; } }
 function save() { try { localStorage.setItem('cart', JSON.stringify(cart)); } catch {} }
+function phonesHtml(str) {
+  const ps = (str || '').split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+  return ps.length ? ps.map((p) => `<a href="tel:${esc(p.replace(/[^\d+]/g, ''))}">${esc(p)}</a>`).join('<br>') : '—';
+}
 
 async function init() {
   try { site = await (await fetch('/api/site')).json(); } catch { $('dishes').innerHTML = '<div class="empty">Не вдалося завантажити меню. Оновіть сторінку.</div>'; return; }
   const s = site.settings;
-  document.title = s.name + ' · ' + (s.address || 'Яворів');
+  document.title = s.name + ' · ' + (s.address || '');
   $('s-name').textContent = $('f-name').textContent = s.name;
   $('s-tagline').textContent = s.tagline;
-  $('s-hours').textContent = s.hours;
-  $('s-address').textContent = s.address; if (safeUrl(s.maps_url)) $('s-address').href = s.maps_url;
-  $('s-phone').textContent = s.phone || '—'; if (s.phone) $('s-phone').href = 'tel:' + s.phone.replace(/[^\d+]/g, '');
+  $('s-hours').textContent = $('f-hours').textContent = s.hours;
+  for (const id of ['s-address', 'f-address']) { $(id).textContent = s.address; if (safeUrl(s.maps_url)) $(id).href = s.maps_url; }
+  $('s-phone').innerHTML = $('f-phone').innerHTML = phonesHtml(s.phone);
+  $('f-route').href = `https://www.google.com/maps/dir/?api=1&destination=${MAP_LAT},${MAP_LNG}`;
+  $('map').src = `https://www.google.com/maps?q=${MAP_LAT},${MAP_LNG}&z=15&output=embed`;
+  const now = new Date(), nm = now.getHours() * 60 + now.getMinutes(), open = nm >= toMin(s.open_time) && nm < toMin(s.close_time);
+  $('s-open').textContent = open ? `Зараз відчинено · до ${s.close_time}` : `Зараз зачинено · відкриваємось о ${s.open_time}`;
+  if (!open) document.querySelector('.kicker i').style.background = '#f3a24a';
   if (safeUrl(s.hero_photo)) $('hero-bg').style.backgroundImage = `url("${s.hero_photo}")`;
   if (safeUrl(s.tiktok)) { $('f-tiktok').href = s.tiktok; $('f-tiktok').hidden = false; }
   if (safeUrl(s.instagram)) { $('f-insta').href = s.instagram; $('f-insta').hidden = false; }
-  if (site.gallery.length) { $('gallery-sec').hidden = false; $('gallery').innerHTML = site.gallery.filter(safeUrl).map((p) => `<img src="${esc(p)}" alt="" loading="lazy">`).join(''); }
+  if (site.gallery.length) { $('gallery-sec').hidden = false; $('gallery').innerHTML = site.gallery.filter(safeUrl).slice(0, 9).map((p) => `<img src="${esc(p)}" alt="" loading="lazy">`).join(''); }
   if (s.booking_enabled === '0') { $('m-table').hidden = $('cta-table').hidden = true; mode('takeaway'); }
   if (s.takeaway_enabled === '0') { $('m-takeaway').hidden = $('cta-take').hidden = true; $('menu-sub').hidden = true; }
-  // прибрати з кошика страви, яких більше немає
   for (const id in cart) if (!site.dishes.find((d) => d.id == id)) delete cart[id];
   slots($('b-time'), s.open_time, s.close_time, 60); slots($('o-time'), s.open_time, s.close_time, 30, true);
   $('b-guests').innerHTML = Array.from({ length: 12 }, (_, i) => `<option ${i === 1 ? 'selected' : ''}>${i + 1}</option>`).join('');
@@ -184,13 +337,15 @@ function renderCats() {
 function renderMenu() {
   const take = site.settings.takeaway_enabled !== '0';
   const list = site.dishes.filter((d) => !cat || d.category_id === cat);
-  $('dishes').innerHTML = list.length ? list.map((d) => `
-    <div class="dish">
-      <div class="ph" ${safeUrl(d.photo) ? `style="background-image:url('${esc(d.photo)}')"` : ''}>${safeUrl(d.photo) ? '' : '🐟'}</div>
-      <div class="body"><h3>${esc(d.name)}</h3><p>${esc(d.description)}${d.weight ? ' · ' + esc(d.weight) : ''}</p>
-        <div class="row"><span class="price">${d.price} грн</span>
-          ${take ? `<div class="qty">${cart[d.id] ? `<button aria-label="Менше" data-id="${d.id}" data-d="-1">−</button><b>${cart[d.id]}</b>` : ''}<button aria-label="Додати" data-id="${d.id}" data-d="1">+</button></div>` : ''}
-        </div></div></div>`).join('') : '<div class="empty">Меню скоро з’явиться</div>';
+  $('dishes').innerHTML = list.length ? list.map((d) => {
+    const ph = safeUrl(d.photo);
+    return `<article class="dish">
+      <div class="ph ${ph ? 'has' : ''}" ${ph ? `style="background-image:url('${esc(d.photo)}')"` : ''}>${FISH}${d.weight ? `<span class="w">${esc(d.weight)}</span>` : ''}</div>
+      <div class="body"><h3>${esc(d.name)}</h3><p>${esc(d.description)}</p>
+        <div class="row"><span class="price">${d.price} <small>грн</small></span>
+          ${take ? `<div class="qty">${cart[d.id] ? `<button aria-label="Менше" data-id="${d.id}" data-d="-1">−</button><b>${cart[d.id]}</b>` : ''}<button class="add" aria-label="Додати" data-id="${d.id}" data-d="1">+</button></div>` : ''}
+        </div></div></article>`;
+  }).join('') : '<div class="empty">Меню скоро з’явиться</div>';
   $('dishes').querySelectorAll('.qty button').forEach((b) => (b.onclick = () => add(+b.dataset.id, +b.dataset.d)));
 }
 function add(id, d) { cart[id] = (cart[id] || 0) + d; if (cart[id] <= 0) delete cart[id]; save(); renderMenu(); renderCart(); }
@@ -199,7 +354,7 @@ function renderCart() {
   const lines = Object.entries(cart).map(([id, q]) => { const d = site.dishes.find((x) => x.id == id); if (!d) return ''; sum += d.price * q; n += q; return `<div class="cartline"><span>${esc(d.name)} × ${q}</span><span>${d.price * q} грн</span></div>`; }).join('');
   $('cart').innerHTML = lines ? lines + `<div class="total"><span>Разом</span><span>${sum} грн</span></div>` : '<div class="empty">Кошик порожній. Додайте страви з меню вище.</div>';
   $('o-btn').disabled = !lines;
-  $('cartbar').hidden = !n; $('cartbar').textContent = `🥡 Кошик · ${n} шт · ${sum} грн`;
+  $('cartbar').hidden = !n; $('cartbar').textContent = `Кошик · ${n} шт · ${sum} грн →`;
 }
 
 async function loadTables() {
@@ -208,8 +363,11 @@ async function loadTables() {
   if (!date || !time) { $('tables').innerHTML = ''; return; }
   const list = await (await fetch(`/api/availability?date=${date}&time=${encodeURIComponent(time)}`)).json();
   if (!Array.isArray(list)) return;
-  $('tables').innerHTML = list.map((t) => { const off = t.busy || t.seats < g; return `<div class="t ${off ? 'busy' : ''}" data-id="${t.id}" data-off="${off ? 1 : 0}" role="button" tabindex="0"><b>${esc(t.name)}</b>${t.seats} місць</div>`; }).join('') || '<div class="empty">Столи ще не додані</div>';
-  $('tables').querySelectorAll('.t').forEach((el) => (el.onclick = () => { if (el.dataset.off === '1') return; selT = +el.dataset.id; $('tables').querySelectorAll('.t').forEach((x) => x.classList.toggle('sel', x === el)); }));
+  $('tables').innerHTML = list.map((t) => { const off = t.busy || t.seats < g; return `<div class="t ${off ? 'busy' : ''}" data-id="${t.id}" data-off="${off ? 1 : 0}" role="button" tabindex="0"><b>${esc(t.name)}</b>${t.seats} місць<div class="seat">${'<i></i>'.repeat(Math.min(t.seats, 8))}</div></div>`; }).join('') || '<div class="empty">Столи ще не додані</div>';
+  $('tables').querySelectorAll('.t').forEach((el) => {
+    const pick = () => { if (el.dataset.off === '1') return; selT = +el.dataset.id; $('tables').querySelectorAll('.t').forEach((x) => x.classList.toggle('sel', x === el)); };
+    el.onclick = pick; el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } };
+  });
 }
 
 function mode(m) {
