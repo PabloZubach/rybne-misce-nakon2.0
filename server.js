@@ -296,14 +296,15 @@ function seed() {
       setSetting('phone', '+380974576671, +380962415378, +380975198047');
       setSetting('address', 'Наконечне Перше, Яворівський р-н, Львівська обл.');
       setSetting('hours', 'щодня 10:00–23:00'); setSetting('close_time', '23:00');
-      setSetting('tagline', 'Свіжа та копчена риба щодня. Сідайте за стіл або заберіть з собою.');
+      setSetting('tagline', 'Готуємо на грилі та в коптильні просто при вас. Сідайте за стіл або заберіть з собою.');
       setSetting('maps_url', 'https://www.google.com/maps/place/?q=place_id:ChIJL7wDVQAVO0cR0EGKJVJyMCQ');
     }
+    if (getSetting('tagline') === 'Свіжа та копчена риба щодня. Сідайте за стіл або заберіть з собою.') setSetting('tagline', 'Готуємо на грилі та в коптильні просто при вас. Сідайте за стіл або заберіть з собою.');
     return;
   }
   const pw = process.env.ADMIN_PASSWORD || crypto.randomBytes(6).toString('base64url');
   const defaults = {
-    name: 'Рибне місце', tagline: 'Свіжа та копчена риба щодня. Сідайте за стіл або заберіть з собою.',
+    name: 'Рибне місце', tagline: 'Готуємо на грилі та в коптильні просто при вас. Сідайте за стіл або заберіть з собою.',
     address: 'Наконечне Перше, Яворівський р-н, Львівська обл.', phone: '+380974576671, +380962415378, +380975198047',
     hours: 'щодня 10:00–23:00', open_time: '10:00', close_time: '23:00',
     instagram: '', tiktok: 'https://www.tiktok.com/@ribnemisce', maps_url: 'https://www.google.com/maps/place/?q=place_id:ChIJL7wDVQAVO0cR0EGKJVJyMCQ',
