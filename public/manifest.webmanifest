@@ -1,0 +1,9 @@
+{
+  "name": "Рибне місце",
+  "short_name": "Рибне місце",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f3ee",
+  "theme_color": "#0f4c5c",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Адмінка · Рибне місце</title>
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+.top{background:var(--hero);color:#fff;padding:14px 0}
+.top .logo{font-weight:700;font-size:17px;text-transform:uppercase}
+main{padding:20px 16px 60px}
+.list{display:grid;gap:10px}
+.item{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--sea-2);border-radius:12px;padding:12px 14px;font-size:14px}
+.item.order{border-left-color:var(--accent)}
+.item.off{opacity:.55}
+.item .muted{color:var(--muted)}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.st-new{background:var(--accent);color:var(--accent-ink)}
+.st-confirmed,.st-ready,.st-seated{background:var(--ok);color:#fff}
+.st-cooking{background:var(--warn);color:#fff}
+.st-cancelled,.st-noshow{background:var(--bad);color:#fff}
+.dishrow{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center}
+.thumb{width:64px;height:64px;border-radius:10px;background:var(--chip) center/cover;display:grid;place-items:center;font-size:24px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.stats div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stats b{display:block;font-size:22px;font-family:Unbounded,sans-serif;font-weight:500}
+.stats span{color:var(--muted);font-size:13px}
+.bar{display:grid;grid-template-columns:minmax(110px,180px) 1fr 40px;gap:10px;align-items:center;font-size:13px;margin:6px 0}
+.bar i{display:block;height:10px;border-radius:5px;background:var(--sea-2)}
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.gal div{position:relative}
+.gal img{aspect-ratio:1;object-fit:cover;border-radius:10px;width:100%}
+.gal button{position:absolute;top:6px;right:6px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:grid;place-items:center;padding:16px;z-index:10;overflow:auto}
+.modal[hidden]{display:none}
+.modal .panel{width:100%;max-width:520px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase}
+.h3{font-size:16px;margin:24px 0 10px}
+.check{display:flex;gap:8px;align-items:center;font-weight:600;color:var(--ink);font-size:14px}
+</style>
+</head>
+<body>
+<div id="login-view" hidden>
+  <main class="wrap" style="max-width:420px;padding-top:12vh">
+    <form class="panel" onsubmit="login(event)">
+      <h2>Вхід в адмінку</h2>
+      <p class="sub">Тільки для власника та персоналу</p>
+      <label for="pw">Пароль</label>
+      <input id="pw" type="password" autocomplete="current-password" required autofocus>
+      <button class="btn dark mt" style="width:100%">Увійти</button>
+      <div id="login-msg"></div>
+    </form>
+  </main>
+</div>
+
+<div id="app" hidden>
+  <div class="top"><div class="wrap row"><div class="logo">Адмінка</div><div class="row"><a class="btn small soft" href="/" target="_blank">Відкрити сайт</a><button class="btn small soft" onclick="logout()">Вийти</button></div></div></div>
+  <main class="wrap">
+    <div class="tabs" id="nav">
+      <button class="tab on" data-v="today">Сьогодні</button>
+      <button class="tab" data-v="menu">Меню</button>
+      <button class="tab" data-v="photos">Фото</button>
+      <button class="tab" data-v="tables">Столи</button>
+      <button class="tab" data-v="stats">Статистика</button>
+      <button class="tab" data-v="settings">Налаштування</button>
+    </div>
+
+    <!-- Сьогодні -->
+    <section data-view="today">
+      <div class="row"><h2>Броні та замовлення</h2><input type="date" id="day" style="width:auto"></div>
+      <p class="sub">Оновлюється автоматично кожні 30 секунд</p>
+      <h3 class="h3">Замовлення з собою</h3><div class="list" id="orders"></div>
+      <h3 class="h3">Броні столів</h3><div class="list" id="bookings"></div>
+    </section>
+
+    <!-- Меню -->
+    <section data-view="menu" hidden>
+      <div class="row"><h2>Меню</h2><button class="btn primary small" onclick="editDish()">+ Додати страву</button></div>
+      <p class="sub">Натисніть на страву, щоб змінити назву, ціну чи фото. Вимкніть «Є в наявності», якщо страва закінчилась.</p>
+      <div id="menu-list"></div>
+      <h3 class="h3">Категорії</h3>
+      <div class="list" id="cat-list"></div>
+      <form class="row mt" onsubmit="addCat(event)"><input id="new-cat" placeholder="Нова категорія" style="flex:1" maxlength="40"><button class="btn soft">Додати</button></form>
+    </section>
+
+    <!-- Фото -->
+    <section data-view="photos" hidden>
+      <h2>Фото сайту</h2>
+      <h3 class="h3">Головне фото (фон верхнього блоку)</h3>
+      <div class="panel"><img id="hero-img" style="max-height:220px;border-radius:10px;margin-bottom:10px" hidden>
+        <input type="file" id="hero-file" accept="image/jpeg,image/png,image/webp"><button class="btn dark small mt" onclick="uploadHero()">Завантажити</button></div>
+      <h3 class="h3">Галерея «Атмосфера»</h3>
+      <div class="panel"><input type="file" id="gal-file" accept="image/jpeg,image/png,image/webp" multiple><button class="btn dark small mt" onclick="uploadGallery()">Додати фото</button>
+        <div class="gal mt" id="gal"></div></div>
+    </section>
+
+    <!-- Столи -->
+    <section data-view="tables" hidden>
+      <h2>Столи</h2>
+      <p class="sub">Гості бачать ці столи при бронюванні. Один стіл не можна забронювати двічі в межах 2 годин.</p>
+      <div class="panel"><table><thead><tr><th>Назва</th><th>Місць</th><th>Активний</th><th></th></tr></thead><tbody id="tbl"></tbody></table>
+        <form class="row mt" onsubmit="addTable(event)"><input id="t-name" placeholder="Напр. Тераса 1" style="flex:2" maxlength="30" required><input id="t-seats" type="number" min="1" max="30" placeholder="Місць" style="flex:1" required><button class="btn soft">Додати стіл</button></form></div>
+    </section>
+
+    <!-- Статистика -->
+    <section data-view="stats" hidden>
+      <h2>Статистика за 30 днів</h2>
+      <div class="stats" id="stat-tiles"></div>
+      <div class="panel"><h3 style="font-size:16px;margin-bottom:8px">Популярні страви (з собою)</h3><div id="pop"></div></div>
+      <h3 class="h3">База гостей</h3>
+      <div class="panel" style="overflow-x:auto"><table><thead><tr><th>Ім'я</th><th>Телефон</th><th>Візитів</th><th>Останній</th></tr></thead><tbody id="guests"></tbody></table></div>
+    </section>
+
+    <!-- Налаштування -->
+    <section data-view="settings" hidden>
+      <h2>Налаштування</h2>
+      <form class="panel" onsubmit="saveSettings(event)">
+        <div class="grid2">
+          <div><label>Назва закладу</label><input name="name" required maxlength="60"></div>
+          <div><label>Телефон</label><input name="phone" maxlength="30"></div>
+        </div>
+        <div class="mt"><label>Короткий опис під заголовком</label><input name="tagline" maxlength="200"></div>
+        <div class="grid2 mt">
+          <div><label>Адреса</label><input name="address" maxlength="120"></div>
+          <div><label>Посилання на Google Maps</label><input name="maps_url" type="url"></div>
+          <div><label>Години роботи (текст на сайті)</label><input name="hours" maxlength="80"></div>
+          <div class="grid2"><div><label>Відкриття</label><input name="open_time" type="time" required></div><div><label>Закриття</label><input name="close_time" type="time" required></div></div>
+          <div><label>TikTok</label><input name="tiktok" type="url"></div>
+          <div><label>Instagram</label><input name="instagram" type="url"></div>
+        </div>
+        <div class="mt"><label class="check"><input type="checkbox" name="booking_enabled"> Приймати бронювання столів</label></div>
+        <div class="mt"><label class="check"><input type="checkbox" name="takeaway_enabled"> Приймати замовлення з собою</label></div>
+        <h3 class="h3">Сповіщення в Telegram</h3>
+        <p class="sub">Створіть бота через @BotFather і вставте токен. Напишіть боту /start, а потім дізнайтесь свій chat ID через @userinfobot. Для групи: додайте бота в групу.</p>
+        <div class="grid2"><div><label>Токен бота</label><input name="telegram_token" autocomplete="off"></div><div><label>Chat ID</label><input name="telegram_chat_id" autocomplete="off"></div></div>
+        <div class="row mt"><button class="btn dark">Зберегти</button><button type="button" class="btn soft" onclick="testTg()">Надіслати тест у Telegram</button></div>
+        <div id="set-msg"></div>
+      </form>
+      <form class="panel mt" onsubmit="changePw(event)">
+        <h3 style="font-size:16px">Змінити пароль</h3>
+        <div class="grid2 mt"><div><label>Поточний пароль</label><input id="pw-cur" type="password" autocomplete="current-password" required></div><div><label>Новий пароль (від 8 символів)</label><input id="pw-new" type="password" autocomplete="new-password" minlength="8" required></div></div>
+        <button class="btn soft mt">Змінити пароль</button><div id="pw-msg"></div>
+      </form>
+    </section>
+  </main>
+</div>
+
+<!-- Редагування страви -->
+<div class="modal" id="dish-modal" hidden>
+  <form class="panel" id="dish-form" onsubmit="saveDish(event)">
+    <h2 id="dish-title">Страва</h2>
+    <div class="mt"><label>Назва</label><input name="name" required maxlength="80"></div>
+    <div class="grid2 mt"><div><label>Ціна, грн</label><input name="price" type="number" min="0" required></div><div><label>Вага / об'єм</label><input name="weight" maxlength="30" placeholder="350 г"></div></div>
+    <div class="mt"><label>Категорія</label><select name="category_id" id="dish-cat" required></select></div>
+    <div class="mt"><label>Опис</label><textarea name="description" maxlength="300"></textarea></div>
+    <div class="mt"><label>Фото</label><div class="row"><div class="thumb" id="dish-thumb">🐟</div><input type="file" name="photo" accept="image/jpeg,image/png,image/webp" style="flex:1"></div>
+      <label class="check mt" id="rm-wrap" hidden><input type="checkbox" name="remove_photo" value="1"> Видалити поточне фото</label></div>
+    <div class="mt"><label class="check"><input type="checkbox" name="available" checked> Є в наявності (показувати на сайті)</label></div>
+    <div id="dish-msg"></div>
+    <div class="row mt"><button type="button" class="btn danger" id="dish-del" onclick="delDish()">Видалити</button><div class="row"><button type="button" class="btn soft" onclick="$('dish-modal').hidden=true">Скасувати</button><button class="btn primary" id="dish-save">Зберегти</button></div></div>
+  </form>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safe = (u) => /^\/uploads\/[\w.-]+$/.test(u || '') ? u : '';
+let menu = { categories: [], dishes: [] }, editing = null, timer;
+const BST = { new: 'Нова', confirmed: 'Підтверджено', seated: 'Гості прийшли', cancelled: 'Скасовано', noshow: 'Не прийшли' };
+const OST = { new: 'Нове', cooking: 'Готується', ready: 'Готове', done: 'Видано', cancelled: 'Скасовано' };
+
+async function api(url, opts = {}) {
+  const o = { ...opts, headers: { ...(opts.body && !(opts.body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}) } };
+  if (o.body && !(o.body instanceof FormData)) o.body = JSON.stringify(o.body);
+  const r = await fetch('/api/admin' + url, o);
+  if (r.status === 401 && url !== '/login') { show(false); throw new Error('Потрібно увійти'); }
+  const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Помилка'); return j;
+}
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 3000); }
+function msg(id, text, ok) { $(id).innerHTML = text ? `<div class="msg ${ok ? 'ok' : 'err'}">${esc(text)}</div>` : ''; }
+function show(on) { $('app').hidden = !on; $('login-view').hidden = on; if (on) { view('today'); } else clearInterval(timer); }
+
+async function login(e) {
+  e.preventDefault(); msg('login-msg');
+  try { await api('/login', { method: 'POST', body: { password: $('pw').value } }); $('pw').value = ''; show(true); } catch (err) { msg('login-msg', err.message); }
+}
+async function logout() { await api('/logout', { method: 'POST' }).catch(() => {}); show(false); }
+
+document.querySelectorAll('#nav .tab').forEach((b) => (b.onclick = () => view(b.dataset.v)));
+function view(v) {
+  document.querySelectorAll('#nav .tab').forEach((b) => b.classList.toggle('on', b.dataset.v === v));
+  document.querySelectorAll('[data-view]').forEach((s) => (s.hidden = s.dataset.view !== v));
+  clearInterval(timer);
+  ({ today: () => { loadToday(); timer = setInterval(loadToday, 30000); }, menu: loadMenu, photos: loadPhotos, tables: loadTables, stats: loadStats, settings: loadSettings })[v]();
+}
+
+// ----- Сьогодні -----
+$('day').value = new Date().toLocaleDateString('sv-SE'); $('day').onchange = loadToday;
+async function loadToday() {
+  const d = $('day').value;
+  const [bs, os] = await Promise.all([api('/bookings?date=' + d), api('/orders?date=' + d)]);
+  $('orders').innerHTML = os.length ? os.map((o) => `<div class="item order ${['done', 'cancelled'].includes(o.status) ? 'off' : ''}">
+    <div class="row"><b>№${o.id} · заберуть о ${esc(o.pickup_time)} · ${o.total} грн</b><span class="badge st-${o.status}">${OST[o.status]}</span></div>
+    <div>${o.items.map((i) => esc(i.name) + ' × ' + i.qty).join(', ')}</div>
+    <div class="muted">${esc(o.name)} · <a href="tel:${esc(o.phone)}">${esc(o.phone)}</a>${o.comment ? ' · ' + esc(o.comment) : ''}</div>
+    <div class="acts">${['cooking', 'ready', 'done', 'cancelled'].filter((s) => s !== o.status).map((s) => `<button class="btn small soft" onclick="setO(${o.id},'${s}')">${OST[s]}</button>`).join('')}</div></div>`).join('') : '<div class="empty">Замовлень немає</div>';
+  $('bookings').innerHTML = bs.length ? bs.map((b) => `<div class="item ${['cancelled', 'noshow'].includes(b.status) ? 'off' : ''}">
+    <div class="row"><b>${esc(b.time)} · ${esc(b.table_name || 'стіл видалено')} · ${b.guests} гостей</b><span class="badge st-${b.status}">${BST[b.status]}</span></div>
+    <div class="muted">${esc(b.name)} · <a href="tel:${esc(b.phone)}">${esc(b.phone)}</a>${b.comment ? ' · ' + esc(b.comment) : ''}</div>
+    <div class="acts">${['confirmed', 'seated', 'noshow', 'cancelled'].filter((s) => s !== b.status).map((s) => `<button class="btn small soft" onclick="setB(${b.id},'${s}')">${BST[s]}</button>`).join('')}</div></div>`).join('') : '<div class="empty">Броней немає</div>';
+}
+async function setB(id, s) { await api('/bookings/' + id, { method: 'PATCH', body: { status: s } }); loadToday(); }
+async function setO(id, s) { await api('/orders/' + id, { method: 'PATCH', body: { status: s } }); loadToday(); }
+
+// ----- Меню -----
+async function loadMenu() {
+  menu = await api('/menu');
+  const byCat = menu.categories.map((c) => ({ c, ds: menu.dishes.filter((d) => d.category_id === c.id) }));
+  $('menu-list').innerHTML = byCat.map(({ c, ds }) => `<h3 class="h3">${esc(c.name)}</h3><div class="list">${ds.map((d) => `
+    <div class="item ${d.available ? '' : 'off'}" style="cursor:pointer" onclick="editDish(${d.id})"><div class="dishrow">
+      <div class="thumb" ${safe(d.photo) ? `style="background-image:url('${d.photo}')"` : ''}>${safe(d.photo) ? '' : '🐟'}</div>
+      <div><b>${esc(d.name)}</b><div class="muted">${esc(d.weight)}${d.available ? '' : ' · немає в наявності'}</div></div>
+      <b>${d.price} грн</b></div></div>`).join('') || '<div class="empty">Немає страв</div>'}</div>`).join('');
+  $('cat-list').innerHTML = menu.categories.map((c) => `<div class="item row"><span>${esc(c.name)}</span><div class="row"><button class="btn small soft" onclick="renCat(${c.id})">Перейменувати</button><button class="btn small danger" onclick="delCat(${c.id})">Видалити</button></div></div>`).join('');
+  $('dish-cat').innerHTML = menu.categories.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+}
+function editDish(id) {
+  editing = id ? menu.dishes.find((d) => d.id === id) : null;
+  const f = $('dish-form'); f.reset(); msg('dish-msg');
+  $('dish-title').textContent = editing ? 'Редагувати страву' : 'Нова страва';
+  $('dish-del').hidden = !editing; $('rm-wrap').hidden = !(editing && editing.photo);
+  const d = editing || { available: 1, category_id: menu.categories[0]?.id };
+  for (const k of ['name', 'price', 'weight', 'description', 'category_id']) if (d[k] !== undefined) f.elements[k].value = d[k];
+  f.elements.available.checked = !!d.available;
+  const th = $('dish-thumb'); th.style.backgroundImage = safe(d.photo) ? `url('${d.photo}')` : ''; th.textContent = safe(d.photo) ? '' : '🐟';
+  $('dish-modal').hidden = false;
+}
+$('dish-form').elements.photo.onchange = (e) => { const f = e.target.files[0]; if (f) { const th = $('dish-thumb'); th.style.backgroundImage = `url('${URL.createObjectURL(f)}')`; th.textContent = ''; } };
+async function saveDish(e) {
+  e.preventDefault(); const f = $('dish-form'), fd = new FormData(f);
+  fd.set('available', f.elements.available.checked ? '1' : '0');
+  if (!f.elements.photo.files.length) fd.delete('photo');
+  $('dish-save').disabled = true;
+  try { await api(editing ? '/dishes/' + editing.id : '/dishes', { method: editing ? 'PATCH' : 'POST', body: fd }); $('dish-modal').hidden = true; toast('Збережено. Зміни вже на сайті'); loadMenu(); }
+  catch (err) { msg('dish-msg', err.message); }
+  $('dish-save').disabled = false;
+}
+async function delDish() { if (!confirm('Видалити «' + editing.name + '»?')) return; await api('/dishes/' + editing.id, { method: 'DELETE' }); $('dish-modal').hidden = true; toast('Страву видалено'); loadMenu(); }
+async function addCat(e) { e.preventDefault(); try { await api('/categories', { method: 'POST', body: { name: $('new-cat').value } }); $('new-cat').value = ''; loadMenu(); } catch (err) { toast(err.message); } }
+async function renCat(id) { const c = menu.categories.find((x) => x.id === id); const n = prompt('Нова назва категорії', c.name); if (!n) return; await api('/categories/' + id, { method: 'PATCH', body: { name: n } }); loadMenu(); }
+async function delCat(id) { if (!confirm('Видалити категорію?')) return; try { await api('/categories/' + id, { method: 'DELETE' }); loadMenu(); } catch (err) { toast(err.message); } }
+
+// ----- Фото -----
+async function loadPhotos() {
+  const s = await api('/settings').catch(() => ({}));
+  const site = await (await fetch('/api/site')).json();
+  if (safe(site.settings.hero_photo)) { $('hero-img').src = site.settings.hero_photo; $('hero-img').hidden = false; }
+  const g = await api('/gallery');
+  $('gal').innerHTML = g.map((x) => `<div><img src="${safe(x.photo)}" alt=""><button class="btn small soft" onclick="delPhoto(${x.id})">✕</button></div>`).join('') || '<div class="empty">Фото ще немає</div>';
+}
+async function uploadHero() {
+  const f = $('hero-file').files[0]; if (!f) return toast('Оберіть фото');
+  const fd = new FormData(); fd.append('photo', f);
+  try { await api('/hero', { method: 'POST', body: fd }); $('hero-file').value = ''; toast('Головне фото оновлено'); loadPhotos(); } catch (err) { toast(err.message); }
+}
+async function uploadGallery() {
+  const files = [...$('gal-file').files]; if (!files.length) return toast('Оберіть фото');
+  for (const f of files) { const fd = new FormData(); fd.append('photo', f); try { await api('/gallery', { method: 'POST', body: fd }); } catch (err) { toast(f.name + ': ' + err.message); } }
+  $('gal-file').value = ''; toast('Фото додано'); loadPhotos();
+}
+async function delPhoto(id) { if (!confirm('Видалити фото?')) return; await api('/gallery/' + id, { method: 'DELETE' }); loadPhotos(); }
+
+// ----- Столи -----
+async function loadTables() {
+  const ts = await api('/tables');
+  $('tbl').innerHTML = ts.map((t) => `<tr><td><input value="${esc(t.name)}" maxlength="30" onchange="updT(${t.id},{name:this.value})"></td>
+    <td style="width:90px"><input type="number" min="1" max="30" value="${t.seats}" onchange="updT(${t.id},{seats:this.value})"></td>
+    <td><input type="checkbox" ${t.active ? 'checked' : ''} onchange="updT(${t.id},{active:this.checked})"></td><td></td></tr>`).join('');
+}
+async function updT(id, b) { try { await api('/tables/' + id, { method: 'PATCH', body: b }); toast('Збережено'); } catch (err) { toast(err.message); loadTables(); } }
+async function addTable(e) { e.preventDefault(); try { await api('/tables', { method: 'POST', body: { name: $('t-name').value, seats: $('t-seats').value } }); $('t-name').value = $('t-seats').value = ''; loadTables(); } catch (err) { toast(err.message); } }
+
+// ----- Статистика -----
+async function loadStats() {
+  const s = await api('/stats');
+  $('stat-tiles').innerHTML = `<div><b>${s.bookings30}</b><span>броней</span></div><div><b>${s.orders30.c}</b><span>замовлень з собою</span></div><div><b>${s.orders30.s} грн</b><span>сума замовлень</span></div><div><b>${s.guests.length}</b><span>гостей у базі</span></div>`;
+  const mx = s.popular[0]?.[1] || 1;
+  $('pop').innerHTML = s.popular.length ? s.popular.map(([n, v]) => `<div class="bar"><span>${esc(n)}</span><i style="width:${v / mx * 100}%"></i><b>${v}</b></div>`).join('') : '<div class="empty">Ще немає замовлень</div>';
+  $('guests').innerHTML = s.guests.map((g) => `<tr><td>${esc(g.name)}</td><td><a href="tel:${esc(g.phone)}">${esc(g.phone)}</a></td><td>${g.visits}</td><td>${esc(g.last)}</td></tr>`).join('') || '<tr><td colspan="4" class="empty">Поки порожньо</td></tr>';
+}
+
+// ----- Налаштування -----
+async function loadSettings() {
+  const s = await api('/settings'), f = document.querySelector('[data-view=settings] form');
+  for (const [k, v] of Object.entries(s)) { const el = f.elements[k]; if (!el) continue; if (el.type === 'checkbox') el.checked = v !== '0'; else el.value = v; }
+}
+async function saveSettings(e) {
+  e.preventDefault(); const f = e.target, body = {};
+  for (const el of f.elements) if (el.name) body[el.name] = el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value;
+  try { await api('/settings', { method: 'PUT', body }); msg('set-msg', 'Збережено', true); loadSettings(); } catch (err) { msg('set-msg', err.message); }
+}
+async function testTg() { try { await api('/telegram-test', { method: 'POST' }); msg('set-msg', 'Тестове повідомлення надіслано', true); } catch (err) { msg('set-msg', err.message); } }
+async function changePw(e) {
+  e.preventDefault();
+  try { await api('/password', { method: 'PUT', body: { current: $('pw-cur').value, next: $('pw-new').value } }); msg('pw-msg', 'Пароль змінено. Увійдіть знову', true); setTimeout(() => show(false), 1500); }
+  catch (err) { msg('pw-msg', err.message); }
+}
+
+api('/me').then(() => show(true)).catch(() => show(false));
+</script>
+</body>
+</html>
