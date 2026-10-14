@@ -45,6 +45,66 @@ app.use((req, res, next) => {
   res.set('Referrer-Policy', 'same-origin');
   next();
 });
+// ---------- SEO: сторінка з даними для Google, robots.txt, sitemap.xml ----------
+const GEO = { lat: 49.9344979, lng: 23.352096 };
+const INDEX_TPL = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+const baseUrl = (req) => (process.env.SITE_URL || `${req.get('x-forwarded-proto') || req.protocol}://${req.get('host')}`).replace(/\/$/, '');
+const attr = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+app.get(['/', '/index.html'], (req, res) => {
+  const base = baseUrl(req), s = {};
+  for (const k of [...PUBLIC_SETTINGS, 'google_verification']) s[k] = getSetting(k);
+  const phones = s.phone.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
+  const title = `${s.name} — свіжа та копчена риба в Наконечному | меню, бронювання, з собою`;
+  const desc = `${s.tagline} ${s.hours ? 'Працюємо ' + s.hours + '.' : ''} ${phones[0] ? 'Тел. ' + phones[0] : ''}`.replace(/\s+/g, ' ').trim().slice(0, 300);
+  const image = s.hero_photo ? base + s.hero_photo : '';
+  const cats = db.prepare('SELECT id,name FROM categories ORDER BY sort,id').all();
+  const dishes = db.prepare('SELECT category_id,name,description,price FROM dishes WHERE available=1 ORDER BY sort,id').all();
+  const ld = {
+    '@context': 'https://schema.org', '@type': 'Restaurant', '@id': base + '/#restaurant',
+    name: s.name, description: s.tagline, url: base + '/', telephone: phones[0] || undefined,
+    ...(image ? { image } : {}),
+    address: { '@type': 'PostalAddress', streetAddress: s.address, addressLocality: 'Наконечне Перше', addressRegion: 'Львівська область', postalCode: '81032', addressCountry: 'UA' },
+    geo: { '@type': 'GeoCoordinates', latitude: GEO.lat, longitude: GEO.lng },
+    hasMap: s.maps_url || undefined,
+    openingHoursSpecification: (s.open_time && s.close_time) ? [{ '@type': 'OpeningHoursSpecification', dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], opens: s.open_time, closes: s.close_time }] : undefined,
+    servesCuisine: ['Риба', 'Копчена риба', 'Гриль', 'Українська'],
+    acceptsReservations: s.booking_enabled !== '0',
+    priceRange: '₴₴',
+    sameAs: [s.tiktok, s.instagram, s.maps_url].filter((u) => /^https?:\/\//.test(u || '')),
+    hasMenu: { '@type': 'Menu', name: 'Меню', hasMenuSection: cats.map((c) => ({ '@type': 'MenuSection', name: c.name,
+      hasMenuItem: dishes.filter((d) => d.category_id === c.id).map((d) => ({ '@type': 'MenuItem', name: d.name, description: d.description || undefined,
+        offers: { '@type': 'Offer', price: d.price, priceCurrency: 'UAH' } })) })).filter((x) => x.hasMenuItem.length) },
+  };
+  const verify = (s.google_verification.match(/content=["']([^"']+)["']/) || [null, s.google_verification])[1].trim();
+  const head = [
+    `<title>${attr(title)}</title>`,
+    `<meta name="description" content="${attr(desc)}">`,
+    `<link rel="canonical" href="${attr(base + '/')}">`,
+    `<meta property="og:type" content="restaurant">`,
+    `<meta property="og:site_name" content="${attr(s.name)}">`,
+    `<meta property="og:title" content="${attr(s.name + ' — свіжа та копчена риба щодня')}">`,
+    `<meta property="og:description" content="${attr(desc)}">`,
+    `<meta property="og:url" content="${attr(base + '/')}">`,
+    `<meta property="og:locale" content="uk_UA">`,
+    image ? `<meta property="og:image" content="${attr(image)}">` : '',
+    `<meta name="geo.region" content="UA-46"><meta name="geo.placename" content="Наконечне Перше"><meta name="geo.position" content="${GEO.lat};${GEO.lng}">`,
+    verify ? `<meta name="google-site-verification" content="${attr(verify)}">` : '',
+    `<script type="application/ld+json">${JSON.stringify(ld).replace(/</g, '\\u003c')}</script>`,
+  ].filter(Boolean).join('\n');
+  res.set('Cache-Control', 'no-cache');
+  res.type('html').send(INDEX_TPL.replace(/<!--SEO-->[\s\S]*?<!--\/SEO-->/, head));
+});
+
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(`User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\nAllow: /api/site\n\nSitemap: ${baseUrl(req)}/sitemap.xml\n`);
+});
+app.get('/sitemap.xml', (req, res) => {
+  const last = new Date().toISOString().slice(0, 10);
+  res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${baseUrl(req)}/</loc><lastmod>${last}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>\n`);
+});
+app.get(['/admin', '/admin.html'], (req, res, next) => { res.set('X-Robots-Tag', 'noindex, nofollow'); next(); });
+
 app.use('/uploads', express.static(UPLOAD_DIR, { maxAge: '7d' }));
 app.use(express.static(path.join(__dirname, 'public'), { extensions: ['html'] }));
 
@@ -253,7 +313,7 @@ A.post('/hero', upload.single('photo'), (req, res) => {
 });
 
 // Налаштування
-const EDITABLE = ['name', 'tagline', 'address', 'phone', 'hours', 'open_time', 'close_time', 'instagram', 'tiktok', 'maps_url', 'booking_enabled', 'takeaway_enabled', 'telegram_token', 'telegram_chat_id'];
+const EDITABLE = ['name', 'tagline', 'address', 'phone', 'hours', 'open_time', 'close_time', 'instagram', 'tiktok', 'maps_url', 'booking_enabled', 'takeaway_enabled', 'telegram_token', 'telegram_chat_id', 'google_verification'];
 A.get('/settings', (req, res) => {
   const o = {}; for (const k of EDITABLE) o[k] = getSetting(k);
   o.telegram_token = o.telegram_token ? '••••' + o.telegram_token.slice(-4) : '';
