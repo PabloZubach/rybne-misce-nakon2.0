@@ -38,6 +38,7 @@ seed();
 // ---------- Застосунок ----------
 const app = express();
 app.disable('x-powered-by');
+app.set('trust proxy', 1); // сайт працює за проксі (Render / Caddy): брати справжню IP-адресу відвідувача
 app.use(express.json({ limit: '200kb' }));
 app.use((req, res, next) => {
   res.set('X-Content-Type-Options', 'nosniff');
