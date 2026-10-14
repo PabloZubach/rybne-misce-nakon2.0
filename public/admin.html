@@ -242,10 +242,21 @@ function editDish(id) {
   $('dish-modal').hidden = false;
 }
 $('dish-form').elements.photo.onchange = (e) => { const f = e.target.files[0]; if (f) { const th = $('dish-thumb'); th.style.backgroundImage = `url('${URL.createObjectURL(f)}')`; th.textContent = ''; } };
+// Зменшує фото перед завантаженням (до 1600 px, JPEG): швидше вантажиться і займає менше місця в базі
+async function shrink(file, max = 1600) {
+  try {
+    const img = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    const k = Math.min(1, max / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', 0.82));
+    return blob && blob.size < file.size ? blob : file;
+  } catch { return file; }
+}
 async function saveDish(e) {
   e.preventDefault(); const f = $('dish-form'), fd = new FormData(f);
   fd.set('available', f.elements.available.checked ? '1' : '0');
-  if (!f.elements.photo.files.length) fd.delete('photo');
+  if (!f.elements.photo.files.length) fd.delete('photo'); else fd.set('photo', await shrink(f.elements.photo.files[0]), 'photo.jpg');
   $('dish-save').disabled = true;
   try { await api(editing ? '/dishes/' + editing.id : '/dishes', { method: editing ? 'PATCH' : 'POST', body: fd }); $('dish-modal').hidden = true; toast('Збережено. Зміни вже на сайті'); loadMenu(); }
   catch (err) { msg('dish-msg', err.message); }
@@ -266,12 +277,12 @@ async function loadPhotos() {
 }
 async function uploadHero() {
   const f = $('hero-file').files[0]; if (!f) return toast('Оберіть фото');
-  const fd = new FormData(); fd.append('photo', f);
+  const fd = new FormData(); fd.append('photo', await shrink(f, 2000), 'photo.jpg');
   try { await api('/hero', { method: 'POST', body: fd }); $('hero-file').value = ''; toast('Головне фото оновлено'); loadPhotos(); } catch (err) { toast(err.message); }
 }
 async function uploadGallery() {
   const files = [...$('gal-file').files]; if (!files.length) return toast('Оберіть фото');
-  for (const f of files) { const fd = new FormData(); fd.append('photo', f); try { await api('/gallery', { method: 'POST', body: fd }); } catch (err) { toast(f.name + ': ' + err.message); } }
+  for (const f of files) { const fd = new FormData(); fd.append('photo', await shrink(f), 'photo.jpg'); try { await api('/gallery', { method: 'POST', body: fd }); } catch (err) { toast(f.name + ': ' + err.message); } }
   $('gal-file').value = ''; toast('Фото додано'); loadPhotos();
 }
 async function delPhoto(id) { if (!confirm('Видалити фото?')) return; await api('/gallery/' + id, { method: 'DELETE' }); loadPhotos(); }

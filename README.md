@@ -37,37 +37,22 @@ npm start
 
 Сайт відкриється на http://localhost:3000, адмінка на http://localhost:3000/admin.
 
-## Розміщення в інтернеті
+## Розміщення в інтернеті (безкоштовно)
 
-Сайту потрібен хостинг, на якому працює Node.js і є **постійний диск**: на ньому зберігаються база даних і фото.
+Сайт працює на **Render Free**, а всі дані (меню, броні, налаштування, фото) зберігаються в безкоштовній базі **Turso**.
 
-### Варіант 1. Render.com (найпростіше, близько 7–8 $/міс)
+1. **Turso:** зареєструйтесь на turso.tech через GitHub. Створіть базу (Create Database, регіон Frankfurt / AWS eu-central-1).
+   Скопіюйте **Database URL** (`libsql://...turso.io`) і створіть токен (**Create Token**).
+2. **Render:** Web Service з цього репозиторію, Build `npm install`, Start `npm start`, тарифний план **Free**.
+   У розділі Environment додайте:
+   - `TURSO_DATABASE_URL`: адреса бази;
+   - `TURSO_AUTH_TOKEN`: токен;
+   - `ADMIN_PASSWORD`: пароль до адмінки.
+3. **Щоб сайт не засинав:** безкоштовний сервер Render засинає після 15 хвилин без відвідувачів.
+   На uptimerobot.com створіть монітор HTTP(s) на адресу `https://ВАШ-САЙТ.onrender.com/healthz` з інтервалом 5 хвилин.
 
-1. Завантажте папку проєкту в репозиторій на GitHub.
-2. На render.com створіть **Web Service** з цього репозиторію:
-   - Build Command: `npm install`
-   - Start Command: `npm start`
-   - Тарифний план: Starter (на безкоштовному немає постійного диска).
-3. У розділі **Disks** додайте диск на 1 ГБ з Mount Path `/var/data`.
-4. У розділі **Environment** додайте змінні:
-   - `DATA_DIR` = `/var/data`
-   - `ADMIN_PASSWORD` = ваш пароль
-5. Після запуску в **Settings → Custom Domains** підключіть свій домен, наприклад `rybnemisce.com.ua`.
-
-### Варіант 2. Власний сервер (VPS від ~150–250 грн/міс, наприклад Hetzner або український хостинг)
-
-```bash
-# на сервері з Ubuntu
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt install -y nodejs
-cd /opt && sudo git clone <ваш репозиторій> rybne-misce && cd rybne-misce
-sudo npm install --omit=dev
-sudo cp .env.example .env && sudo nano .env     # ADMIN_PASSWORD, DATA_DIR=/opt/rybne-misce/data
-sudo npm install -g pm2 && pm2 start server.js --name rybne && pm2 save && pm2 startup
-```
-
-Далі налаштуйте nginx як проксі на порт 3000 і безкоштовний HTTPS через certbot (`sudo certbot --nginx`).
-
-**Сайт обов'язково має працювати через HTTPS**, інакше пароль до адмінки передається відкритим текстом.
+Якщо раніше сайт працював на платному плані з диском, при першому запуску з Turso всі дані й фото з диска переносяться автоматично.
+Після цього диск можна видалити, а план змінити на Free.
 
 ## Telegram-сповіщення
 
@@ -78,7 +63,7 @@ sudo npm install -g pm2 && pm2 start server.js --name rybne && pm2 save && pm2 s
 
 ## Резервні копії
 
-Усі дані лежать у папці `data/` (або в `DATA_DIR`): `site.db` (база) і `uploads/` (фото). Копіюйте цю папку раз на тиждень.
+Усі дані лежать у базі Turso. Повну копію можна зробити командою `turso db shell НАЗВА-БАЗИ .dump > backup.sql` (потрібна програма Turso CLI) або попросити розробника.
 
 ## Чого поки немає
 
@@ -93,5 +78,5 @@ server.js            сервер і API
 public/index.html    сайт для гостей
 public/admin.html    адмін-панель
 public/style.css     стилі
-data/                база й фото (створюється автоматично)
+data/                локальна база для перевірки на своєму комп'ютері (без Turso)
 ```
