@@ -76,8 +76,8 @@ app.get(['/', '/index.html'], h(async (req, res) => {
   const base = baseUrl(req), s = {};
   for (const k of [...PUBLIC_SETTINGS, 'google_verification']) s[k] = getSetting(k);
   const phones = s.phone.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
-  const title = `${s.name} — свіжа та копчена риба в Наконечному | меню, бронювання, з собою`;
-  const desc = `${s.tagline} ${s.hours ? 'Працюємо ' + s.hours + '.' : ''} ${phones[0] ? 'Тел. ' + phones[0] : ''}`.replace(/\s+/g, ' ').trim().slice(0, 300);
+  const title = `${s.name} — свіжа та копчена риба в Наконечному біля Яворова | меню, бронювання, з собою`;
+  const desc = `${s.tagline} Наконечне Перше, Яворівський район, поруч із Яворовом. ${s.hours ? 'Працюємо ' + s.hours + '.' : ''} ${phones[0] ? 'Тел. ' + phones[0] : ''}`.replace(/\s+/g, ' ').trim().slice(0, 300);
   const image = s.hero_photo ? base + s.hero_photo : '';
   const cats = await all('SELECT id,name FROM categories ORDER BY sort,id');
   const dishes = await all('SELECT category_id,name,description,price FROM dishes WHERE available=1 ORDER BY sort,id');
@@ -92,6 +92,7 @@ app.get(['/', '/index.html'], h(async (req, res) => {
     servesCuisine: ['Риба', 'Копчена риба', 'Гриль', 'Українська'],
     acceptsReservations: s.booking_enabled !== '0',
     priceRange: '₴₴',
+    areaServed: ['Наконечне Перше', 'Яворів', 'Яворівський район'],
     sameAs: [s.tiktok, s.instagram, s.maps_url].filter((u) => /^https?:\/\//.test(u || '')),
     hasMenu: { '@type': 'Menu', name: 'Меню', hasMenuSection: cats.map((c) => ({ '@type': 'MenuSection', name: c.name,
       hasMenuItem: dishes.filter((d) => d.category_id === c.id).map((d) => ({ '@type': 'MenuItem', name: d.name, description: d.description || undefined,
