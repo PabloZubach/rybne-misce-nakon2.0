@@ -162,6 +162,8 @@ async function savePhoto(file) {
 }
 async function removePhoto(p) {
   if (!p || !p.startsWith('/uploads/')) return;
+  const used = await get('SELECT (SELECT COUNT(*) FROM dishes WHERE photo=?) + (SELECT COUNT(*) FROM gallery WHERE photo=?) n', p, p);
+  if (used && used.n > 1) return; // фото ще використовує інша страва
   const name = path.basename(p);
   photoCache.delete(name);
   await run('DELETE FROM photos WHERE name=?', name);
@@ -222,14 +224,14 @@ app.post('/api/orders', limiter, h(async (req, res) => {
   if (!clean(name, 60) || !isPhone(phone)) return res.status(400).json({ error: "Вкажіть ім'я та телефон" });
   const lines = []; let total = 0;
   for (const it of items) {
-    const d = await get('SELECT id,name,price FROM dishes WHERE id=? AND available=1', it.id);
+    const d = await get('SELECT id,name,price,weight FROM dishes WHERE id=? AND available=1', it.id);
     const q = parseInt(it.qty, 10);
     if (!d || !(q >= 1 && q <= 50)) return res.status(400).json({ error: 'Деяких страв уже немає. Оновіть сторінку' });
-    lines.push({ id: d.id, name: d.name, price: d.price, qty: q }); total += d.price * q;
+    lines.push({ id: d.id, name: d.name, price: d.price, qty: q, per100: /^за 100/.test(d.weight || '') }); total += d.price * q;
   }
   const { id } = await run('INSERT INTO orders(items,total,pickup_time,name,phone,comment) VALUES(?,?,?,?,?,?)',
     JSON.stringify(lines), total, pickup_time, clean(name, 60), clean(phone, 20), clean(comment, 300));
-  notify(`🥡 Замовлення з собою #${id}\n${lines.map((l) => `• ${l.name} × ${l.qty} = ${l.price * l.qty} грн`).join('\n')}\n💰 Разом: ${total} грн\n⏰ Заберуть о ${pickup_time}\n👤 ${clean(name, 60)}, ${clean(phone, 20)}${comment ? '\n💬 ' + clean(comment, 300) : ''}`);
+  notify(`🥡 Замовлення з собою #${id}\n${lines.map((l) => `• ${l.name} × ${l.per100 ? l.qty * 100 + ' г' : l.qty} = ${l.price * l.qty} грн`).join('\n')}\n💰 Разом: ${total} грн\n⏰ Заберуть о ${pickup_time}\n👤 ${clean(name, 60)}, ${clean(phone, 20)}${comment ? '\n💬 ' + clean(comment, 300) : ''}`);
   res.json({ ok: true, id, total });
 }));
 
@@ -447,6 +449,12 @@ async function seed() {
       await setSetting('maps_url', 'https://www.google.com/maps/place/?q=place_id:ChIJL7wDVQAVO0cR0EGKJVJyMCQ');
     }
     if (getSetting('tagline') === 'Свіжа та копчена риба щодня. Сідайте за стіл або заберіть з собою.') await setSetting('tagline', 'Готуємо на грилі та в коптильні просто при вас. Сідайте за стіл або заберіть з собою.');
+    // Одноразово: замінити тестове меню справжнім, але лише якщо власник ще не змінював меню сам
+    if (getSetting('menu_v2') !== '1') {
+      const names = (await all('SELECT name FROM dishes')).map((d) => d.name);
+      if (names.every((n) => DEMO_DISHES.includes(n))) { await importRealMenu(); console.log('Тестове меню замінено справжнім.'); }
+      await setSetting('menu_v2', '1');
+    }
     return;
   }
   const pw = process.env.ADMIN_PASSWORD || crypto.randomBytes(6).toString('base64url');
@@ -459,22 +467,28 @@ async function seed() {
     google_verification: '', admin_hash: hashPassword(pw),
   };
   for (const [k, v] of Object.entries(defaults)) await setSetting(k, v);
-  const cats = ['Гриль', 'Гарячі страви', 'Супи', 'Закуски', 'Напої'];
-  const cid = {};
-  for (const [i, c] of cats.entries()) cid[c] = (await run('INSERT INTO categories(name,sort) VALUES(?,?)', c, i)).id;
-  const dishes = [
-    ['Гриль', 'Дорадо на грилі', 'Ціла рибина, лимон, оливкова олія', '350 г', 320],
-    ['Гриль', 'Стейк з лосося', 'Соус теріякі', '200 г', 390],
-    ['Гарячі страви', 'Форель смажена', 'Хрустка скоринка, картопля', '300 г', 280],
-    ['Гарячі страви', 'Фіш енд чіпс', 'Тріска в клярі, фрі, соус тартар', '350 г', 250],
-    ['Супи', 'Рибна юшка', 'Три види риби, зелень', '350 мл', 150],
-    ['Закуски', 'Креветки темпура', 'Солодкий чилі', '8 шт', 270],
-    ['Напої', 'Домашній лимонад', 'Лимон і м’ята', '500 мл', 80],
-  ];
-  await db.batch(dishes.map((d, i) => ({ sql: 'INSERT INTO dishes(category_id,name,description,weight,price,sort) VALUES(?,?,?,?,?,?)', args: [cid[d[0]], d[1], d[2], d[3], d[4], i] })), 'write');
+  await importRealMenu();
+  await setSetting('menu_v2', '1');
   await db.batch([['Стіл 1', 2], ['Стіл 2', 2], ['Стіл 3', 4], ['Стіл 4', 4], ['Стіл 5', 4], ['Стіл 6', 6], ['Стіл 7', 8]]
     .map(([n, s]) => ({ sql: 'INSERT INTO tables_(name,seats) VALUES(?,?)', args: [n, s] })), 'write');
   if (!process.env.ADMIN_PASSWORD) console.log('\n  Пароль до адмінки: ' + pw + '\n  (змініть його в адмінці → Налаштування)\n');
+}
+// Назви страв тестового меню, яке було на сайті спочатку
+const DEMO_DISHES = ['Дорадо на грилі', 'Стейк з лосося', 'Форель смажена', 'Фіш енд чіпс', 'Рибна юшка', 'Креветки темпура', 'Домашній лимонад'];
+async function importRealMenu() {
+  const MENU = require('./seed-menu/menu.js');
+  for (const d of await all('SELECT photo FROM dishes')) await removePhoto(d.photo);
+  await run('DELETE FROM dishes'); await run('DELETE FROM categories');
+  const cid = {}, photoPath = {};
+  for (const [cat] of MENU) if (!(cat in cid)) cid[cat] = (await run('INSERT INTO categories(name,sort) VALUES(?,?)', cat, Object.keys(cid).length)).id;
+  for (const [i, [cat, name, desc, weight, price, file]] of MENU.entries()) {
+    if (!photoPath[file]) {
+      const pname = 'menu-' + file;
+      await run('INSERT OR REPLACE INTO photos(name,mime,data,created) VALUES(?,?,?,?)', pname, 'image/jpeg', fs.readFileSync(path.join(__dirname, 'seed-menu', file)), Date.now());
+      photoPath[file] = '/uploads/' + pname;
+    }
+    await run('INSERT INTO dishes(category_id,name,description,weight,price,photo,sort) VALUES(?,?,?,?,?,?,?)', cid[cat], name, desc, weight, price, photoPath[file], i);
+  }
 }
 function hashPassword(pw) { const salt = crypto.randomBytes(16).toString('hex'); return salt + ':' + crypto.scryptSync(pw, salt, 64).toString('hex'); }
 function checkPassword(pw) {

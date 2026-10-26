@@ -341,23 +341,27 @@ function renderMenu() {
   const take = site.settings.takeaway_enabled !== '0';
   const list = site.dishes.filter((d) => !cat || d.category_id === cat);
   $('dishes').innerHTML = list.length ? list.map((d) => {
-    const ph = safeUrl(d.photo);
+    const ph = safeUrl(d.photo), w = per100(d);
     return `<article class="dish">
-      <div class="ph ${ph ? 'has' : ''}" ${ph ? `style="background-image:url('${esc(d.photo)}')"` : ''}>${FISH}${d.weight ? `<span class="w">${esc(d.weight)}</span>` : ''}</div>
+      <div class="ph ${ph ? 'has' : ''}" ${ph ? `style="background-image:url('${esc(d.photo)}')"` : ''}>${FISH}${d.weight && !w ? `<span class="w">${esc(d.weight)}</span>` : ''}</div>
       <div class="body"><h3>${esc(d.name)}</h3><p>${esc(d.description)}</p>
-        <div class="row"><span class="price">${d.price} <small>грн</small></span>
-          ${take ? `<div class="qty">${cart[d.id] ? `<button aria-label="Менше" data-id="${d.id}" data-d="-1">−</button><b>${cart[d.id]}</b>` : ''}<button class="add" aria-label="Додати" data-id="${d.id}" data-d="1">+</button></div>` : ''}
+        <div class="row"><span class="price">${d.price} <small>грн${w ? ' / 100 г' : ''}</small></span>
+          ${take ? `<div class="qty">${cart[d.id] ? `<button aria-label="Менше" data-id="${d.id}" data-d="-1">−</button><b>${qtyLabel(d, cart[d.id])}</b>` : ''}<button class="add" aria-label="Додати" data-id="${d.id}" data-d="1">+</button></div>` : ''}
         </div></div></article>`;
   }).join('') : '<div class="empty">Меню скоро з’явиться</div>';
   $('dishes').querySelectorAll('.qty button').forEach((b) => (b.onclick = () => add(+b.dataset.id, +b.dataset.d)));
 }
+// Страви на вагу (ціна «за 100 г»): одне натискання «+» = 100 г
+function per100(d) { return /^за 100/.test(d.weight || ''); }
+function qtyLabel(d, q) { return per100(d) ? `${q * 100} г` : q; }
 function add(id, d) { cart[id] = (cart[id] || 0) + d; if (cart[id] <= 0) delete cart[id]; save(); renderMenu(); renderCart(); }
 function renderCart() {
   let sum = 0, n = 0;
-  const lines = Object.entries(cart).map(([id, q]) => { const d = site.dishes.find((x) => x.id == id); if (!d) return ''; sum += d.price * q; n += q; return `<div class="cartline"><span>${esc(d.name)} × ${q}</span><span>${d.price * q} грн</span></div>`; }).join('');
-  $('cart').innerHTML = lines ? lines + `<div class="total"><span>Разом</span><span>${sum} грн</span></div>` : '<div class="empty">Кошик порожній. Додайте страви з меню вище.</div>';
+  let weighed = false;
+  const lines = Object.entries(cart).map(([id, q]) => { const d = site.dishes.find((x) => x.id == id); if (!d) return ''; sum += d.price * q; n += 1; weighed = weighed || per100(d); return `<div class="cartline"><span>${esc(d.name)} × ${qtyLabel(d, q)}</span><span>${d.price * q} грн</span></div>`; }).join('');
+  $('cart').innerHTML = lines ? lines + `<div class="total"><span>Разом</span><span>${weighed ? '≈ ' : ''}${sum} грн</span></div>` + (weighed ? '<p class="sub" style="margin-top:6px">Рибу на вагу зважуємо при видачі, тож сума може трохи відрізнятися.</p>' : '') : '<div class="empty">Кошик порожній. Додайте страви з меню вище.</div>';
   $('o-btn').disabled = !lines;
-  $('cartbar').hidden = !n; $('cartbar').textContent = `Кошик · ${n} шт · ${sum} грн →`;
+  $('cartbar').hidden = !n; $('cartbar').textContent = `Кошик · ${n} поз. · ${sum} грн →`;
 }
 
 async function loadTables() {
