@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <!--SEO-->
 <title>Рибне місце · Наконечне</title>
-<meta name="description" content="Свіжа та копчена риба щодня. Меню, бронювання столу та замовлення з собою онлайн">
+<meta name="description" content="Свіжа та копчена риба щодня. Меню та замовлення з собою онлайн">
 <!--/SEO-->
 <meta name="theme-color" content="#0a1f38">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -155,7 +155,7 @@ footer a{color:#fff;font-weight:700;text-decoration:none;margin-left:16px}
   <div class="wrap">
     <nav>
       <div class="brand"><span class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c3-4 8-6 12-4l4-3v14l-4-3c-4 2-9 0-12-4z"/><circle cx="8" cy="11.5" r=".6" fill="#fff"/></svg></span><span id="s-name">Рибне місце</span></div>
-      <div class="navlinks"><a href="#menu">Меню</a><a href="#book">Бронювання</a><a href="#find">Контакти</a></div>
+      <div class="navlinks"><a href="#menu">Меню</a><a href="#book" id="nav-book">Бронювання</a><a href="#find">Контакти</a></div>
     </nav>
     <div class="hero-grid">
       <div>
@@ -187,7 +187,7 @@ footer a{color:#fff;font-weight:700;text-decoration:none;margin-left:16px}
   <div class="features">
     <div class="feature"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f6fb0" stroke-width="2" stroke-linecap="round"><path d="M2 12c3-4 8-6 12-4l5-3v14l-5-3c-4 2-9 0-12-4z"/></svg></div><div><h3>Свіжа риба щодня</h3><p>Короп, форель, лосось, вугор та інша риба щодня</p></div></div>
     <div class="feature"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#e8792f" stroke-width="2" stroke-linecap="round"><path d="M12 3c2 3-2 4 0 7M8 5c1.5 2-1 3 0 5M16 5c1.5 2-1 3 0 5"/><rect x="4" y="12" width="16" height="8" rx="2"/></svg></div><div><h3>Коптимо на місці</h3><p>Власна коптильня та гриль, риба готується просто при вас</p></div></div>
-    <div class="feature"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f8f5b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></div><div><h3>Тут або з собою</h3><p>Забронюйте стіл чи замовте онлайн і заберіть без черги</p></div></div>
+    <div class="feature"><div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f8f5b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.5 12h-11z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></div><div><h3>Тут або з собою</h3><p id="feat-take">Забронюйте стіл чи замовте онлайн і заберіть без черги</p></div></div>
   </div>
 
   <section id="menu">
@@ -203,9 +203,9 @@ footer a{color:#fff;font-weight:700;text-decoration:none;margin-left:16px}
     <div class="book-wrap">
       <div class="book-side">
         <div class="eyebrow" style="color:var(--ember-2)">Онлайн, без дзвінків</div>
-        <h2>Бронювання та замовлення</h2>
+        <h2 id="book-title">Бронювання та замовлення</h2>
         <p>Займає менше хвилини. Ми одразу отримуємо вашу заявку і, якщо потрібно, передзвонимо.</p>
-        <ul class="steps">
+        <ul class="steps" id="book-steps">
           <li><span>1</span>Оберіть стіл або страви</li>
           <li><span>2</span>Вкажіть час та телефон</li>
           <li><span>3</span>Приходьте, ми чекаємо</li>
@@ -213,7 +213,7 @@ footer a{color:#fff;font-weight:700;text-decoration:none;margin-left:16px}
       </div>
 
       <div class="panel">
-        <div class="switch">
+        <div class="switch" id="book-switch">
           <button id="m-table" class="on" onclick="mode('table')">Стіл на місці</button>
           <button id="m-takeaway" onclick="mode('takeaway')">З собою</button>
         </div>
@@ -313,7 +313,15 @@ async function init() {
   if (safeUrl(s.tiktok)) { $('f-tiktok').href = s.tiktok; $('f-tiktok').hidden = false; }
   if (safeUrl(s.instagram)) { $('f-insta').href = s.instagram; $('f-insta').hidden = false; }
   if (site.gallery.length) { $('gallery-sec').hidden = false; $('gallery').innerHTML = site.gallery.filter(safeUrl).slice(0, 9).map((p) => `<img src="${esc(p)}" alt="" loading="lazy">`).join(''); }
-  if (s.booking_enabled === '0') { $('m-table').hidden = $('cta-table').hidden = true; mode('takeaway'); }
+  if (s.booking_enabled === '0') {
+    // Бронювання столів вимкнено в адмінці: лишаємо тільки замовлення з собою
+    $('m-table').hidden = $('cta-table').hidden = $('book-switch').hidden = true; mode('takeaway');
+    $('cta-take').classList.replace('glass', 'ember');
+    $('nav-book').textContent = 'Замовити';
+    $('book-title').textContent = 'Замовлення з собою';
+    $('feat-take').textContent = 'Поїжте на місці або замовте онлайн і заберіть без черги';
+    $('book-steps').innerHTML = '<li><span>1</span>Оберіть страви в меню</li><li><span>2</span>Вкажіть, коли заберете, і телефон</li><li><span>3</span>Заберіть замовлення без черги</li>';
+  }
   if (s.takeaway_enabled === '0') { $('m-takeaway').hidden = $('cta-take').hidden = true; $('menu-sub').hidden = true; }
   for (const id in cart) if (!site.dishes.find((d) => d.id == id)) delete cart[id];
   slots($('b-time'), s.open_time, s.close_time, 60); slots($('o-time'), s.open_time, s.close_time, 30, true);

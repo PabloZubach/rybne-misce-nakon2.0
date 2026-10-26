@@ -76,7 +76,7 @@ app.get(['/', '/index.html'], h(async (req, res) => {
   const base = baseUrl(req), s = {};
   for (const k of [...PUBLIC_SETTINGS, 'google_verification']) s[k] = getSetting(k);
   const phones = s.phone.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
-  const title = `${s.name} — свіжа та копчена риба в Наконечному біля Яворова | меню, бронювання, з собою`;
+  const title = `${s.name} — свіжа та копчена риба в Наконечному біля Яворова | меню${s.booking_enabled !== '0' ? ', бронювання' : ''}, замовлення з собою`;
   const desc = `${s.tagline} Наконечне Перше, Яворівський район, поруч із Яворовом. ${s.hours ? 'Працюємо ' + s.hours + '.' : ''} ${phones[0] ? 'Тел. ' + phones[0] : ''}`.replace(/\s+/g, ' ').trim().slice(0, 300);
   const image = s.hero_photo ? base + s.hero_photo : '';
   const cats = await all('SELECT id,name FROM categories ORDER BY sort,id');
@@ -450,6 +450,9 @@ async function seed() {
     }
     if (getSetting('tagline') === 'Свіжа та копчена риба щодня. Сідайте за стіл або заберіть з собою.') await setSetting('tagline', 'Готуємо на грилі та в коптильні просто при вас. Сідайте за стіл або заберіть з собою.');
     // Одноразово: замінити тестове меню справжнім, але лише якщо власник ще не змінював меню сам
+    // Одноразово (за проханням закладу): вимкнути бронювання столів, лишити замовлення з собою.
+    // Повернути можна в адмінці → Налаштування → «Приймати бронювання столів».
+    if (getSetting('booking_off_v1') !== '1') { await setSetting('booking_enabled', '0'); await setSetting('booking_off_v1', '1'); }
     if (getSetting('menu_v2') !== '1') {
       const names = (await all('SELECT name FROM dishes')).map((d) => d.name);
       if (names.every((n) => DEMO_DISHES.includes(n))) { await importRealMenu(); console.log('Тестове меню замінено справжнім.'); }
@@ -463,7 +466,7 @@ async function seed() {
     address: 'Наконечне Перше, Яворівський р-н, Львівська обл.', phone: '+380974576671, +380962415378, +380975198047',
     hours: 'щодня 10:00–23:00', open_time: '10:00', close_time: '23:00',
     instagram: '', tiktok: 'https://www.tiktok.com/@ribnemisce', maps_url: 'https://www.google.com/maps/place/?q=place_id:ChIJL7wDVQAVO0cR0EGKJVJyMCQ',
-    hero_photo: '', booking_enabled: '1', takeaway_enabled: '1', telegram_token: process.env.TELEGRAM_TOKEN || '', telegram_chat_id: process.env.TELEGRAM_CHAT_ID || '',
+    hero_photo: '', booking_enabled: '0', booking_off_v1: '1', takeaway_enabled: '1', telegram_token: process.env.TELEGRAM_TOKEN || '', telegram_chat_id: process.env.TELEGRAM_CHAT_ID || '',
     google_verification: '', admin_hash: hashPassword(pw),
   };
   for (const [k, v] of Object.entries(defaults)) await setSetting(k, v);
