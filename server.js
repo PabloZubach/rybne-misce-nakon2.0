@@ -78,13 +78,13 @@ app.get(['/', '/index.html'], h(async (req, res) => {
   const phones = s.phone.split(/[,;]/).map((x) => x.trim()).filter(Boolean);
   const title = `${s.name} — свіжа та копчена риба в Наконечному біля Яворова | меню${s.booking_enabled !== '0' ? ', бронювання' : ''}, замовлення з собою`;
   const desc = `${s.tagline} Наконечне Перше, Яворівський район, поруч із Яворовом. ${s.hours ? 'Працюємо ' + s.hours + '.' : ''} ${phones[0] ? 'Тел. ' + phones[0] : ''}`.replace(/\s+/g, ' ').trim().slice(0, 300);
-  const image = s.hero_photo ? base + s.hero_photo : '';
+  const image = base + (s.hero_photo || '/hero-front.jpg');
   const cats = await all('SELECT id,name FROM categories ORDER BY sort,id');
   const dishes = await all('SELECT category_id,name,description,price FROM dishes WHERE available=1 ORDER BY sort,id');
   const ld = {
     '@context': 'https://schema.org', '@type': 'Restaurant', '@id': base + '/#restaurant',
     name: s.name, description: s.tagline, url: base + '/', telephone: phones[0] || undefined,
-    ...(image ? { image } : {}),
+    image, logo: base + '/logo-512.png',
     address: { '@type': 'PostalAddress', streetAddress: s.address, addressLocality: 'Наконечне Перше', addressRegion: 'Львівська область', postalCode: '81032', addressCountry: 'UA' },
     geo: { '@type': 'GeoCoordinates', latitude: GEO.lat, longitude: GEO.lng },
     hasMap: s.maps_url || undefined,
