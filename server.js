@@ -39,6 +39,7 @@ const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS gallery (id INTEGER PRIMARY KEY, photo TEXT NOT NULL, sort INTEGER DEFAULT 0)`,
   `CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, expires INTEGER)`,
   `CREATE TABLE IF NOT EXISTS photos (name TEXT PRIMARY KEY, mime TEXT NOT NULL, data BLOB NOT NULL, created INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS phone_verifications (code TEXT PRIMARY KEY, phone TEXT NOT NULL, tg_user_id INTEGER, tg_name TEXT DEFAULT '', verified_at INTEGER)`,
   `CREATE INDEX IF NOT EXISTS bookings_date ON bookings(date)`,
 ];
 
@@ -173,6 +174,7 @@ async function removePhoto(p) {
 app.get('/api/site', h(async (req, res) => {
   const s = {};
   for (const k of PUBLIC_SETTINGS) s[k] = getSetting(k);
+  s.verify_phone = verifyActive() ? '1' : '0';
   const [categories, dishes, gallery] = await Promise.all([
     all('SELECT id,name FROM categories ORDER BY sort,id'),
     all('SELECT id,category_id,name,description,weight,price,photo FROM dishes WHERE available=1 ORDER BY sort,id'),
@@ -202,17 +204,19 @@ app.post('/api/bookings', limiter, h(async (req, res) => {
   if (!inHours(time)) return res.status(400).json({ error: 'Заклад у цей час не працює' });
   const g = parseInt(guests, 10);
   if (!(g >= 1 && g <= 30)) return res.status(400).json({ error: 'Вкажіть кількість гостей' });
-  if (!clean(name, 60) || !isPhone(phone)) return res.status(400).json({ error: "Вкажіть ім'я та телефон" });
+  const v = await checkGuestPhone(req.body, phone);
+  if (v.error) return res.status(v.status || 400).json({ error: v.error });
+  if (!clean(name, 60)) return res.status(400).json({ error: "Вкажіть ім'я" });
   const t = await get('SELECT * FROM tables_ WHERE id=? AND active=1', table_id);
   if (!t) return res.status(400).json({ error: 'Оберіть стіл' });
   if (t.seats < g) return res.status(400).json({ error: 'Цей стіл замалий для вашої компанії' });
   const id = await serial(async () => {
     if ((await busyTables(date, time)).has(t.id)) return null;
     return (await run('INSERT INTO bookings(table_id,date,time,guests,name,phone,comment) VALUES(?,?,?,?,?,?,?)',
-      t.id, date, time, g, clean(name, 60), clean(phone, 20), clean(comment, 300))).id;
+      t.id, date, time, g, clean(name, 60), v.phone, clean(comment, 300))).id;
   });
   if (!id) return res.status(409).json({ error: 'Цей стіл щойно забронювали. Оберіть інший' });
-  notify(`🍽 Нова броня #${id}\n${t.name} (${t.seats} місць)\n📅 ${date} о ${time}\n👥 ${g} гостей\n👤 ${clean(name, 60)}, ${clean(phone, 20)}${comment ? '\n💬 ' + clean(comment, 300) : ''}`);
+  notify(`🍽 Нова броня #${id}\n${t.name} (${t.seats} місць)\n📅 ${date} о ${time}\n👥 ${g} гостей\n👤 ${clean(name, 60)}, ${v.phone}${v.label}${comment ? '\n💬 ' + clean(comment, 300) : ''}`);
   res.json({ ok: true, id });
 }));
 
@@ -221,7 +225,12 @@ app.post('/api/orders', limiter, h(async (req, res) => {
   const { items, pickup_time, name, phone, comment } = req.body || {};
   if (!Array.isArray(items) || !items.length || items.length > 50) return res.status(400).json({ error: 'Кошик порожній' });
   if (!isTime(pickup_time) || !inHours(pickup_time)) return res.status(400).json({ error: 'Вкажіть час, коли заберете' });
-  if (!clean(name, 60) || !isPhone(phone)) return res.status(400).json({ error: "Вкажіть ім'я та телефон" });
+  if (!clean(name, 60)) return res.status(400).json({ error: "Вкажіть ім'я" });
+  const v = await checkGuestPhone(req.body, phone);
+  if (v.error) return res.status(v.status || 400).json({ error: v.error });
+  // Захист від спаму: не більше 5 замовлень з одного номера за годину
+  if ((await get(`SELECT COUNT(*) c FROM orders WHERE phone=? AND created_at>=datetime('now','localtime','-1 hour')`, v.phone)).c >= 5)
+    return res.status(429).json({ error: 'З цього номера вже багато замовлень за останню годину. Зателефонуйте нам, будь ласка' });
   const lines = []; let total = 0;
   for (const it of items) {
     const d = await get('SELECT id,name,price,weight FROM dishes WHERE id=? AND available=1', it.id);
@@ -230,10 +239,115 @@ app.post('/api/orders', limiter, h(async (req, res) => {
     lines.push({ id: d.id, name: d.name, price: d.price, qty: q, per100: /^за 100/.test(d.weight || '') }); total += d.price * q;
   }
   const { id } = await run('INSERT INTO orders(items,total,pickup_time,name,phone,comment) VALUES(?,?,?,?,?,?)',
-    JSON.stringify(lines), total, pickup_time, clean(name, 60), clean(phone, 20), clean(comment, 300));
-  notify(`🥡 Замовлення з собою #${id}\n${lines.map((l) => `• ${l.name} × ${l.per100 ? l.qty * 100 + ' г' : l.qty} = ${l.price * l.qty} грн`).join('\n')}\n💰 Разом: ${total} грн\n⏰ Заберуть о ${pickup_time}\n👤 ${clean(name, 60)}, ${clean(phone, 20)}${comment ? '\n💬 ' + clean(comment, 300) : ''}`);
+    JSON.stringify(lines), total, pickup_time, clean(name, 60), v.phone, clean(comment, 300));
+  notify(`🥡 Замовлення з собою #${id}\n${lines.map((l) => `• ${l.name} × ${l.per100 ? l.qty * 100 + ' г' : l.qty} = ${l.price * l.qty} грн`).join('\n')}\n💰 Разом: ${total} грн\n⏰ Заберуть о ${pickup_time}\n👤 ${clean(name, 60)}, ${v.phone}${v.label}${comment ? '\n💬 ' + clean(comment, 300) : ''}`);
   res.json({ ok: true, id, total });
 }));
+
+// ---------- Підтвердження номера через Telegram ----------
+// 1) Сайт просить код (POST /api/verify/start) і відкриває бота за посиланням t.me/<бот>?start=<код>.
+// 2) У боті гість натискає «Поділитися номером». Telegram надсилає номер, прив'язаний до його акаунта,
+//    тому вписати чужий номер не вийде.
+// 3) Сайт перевіряє код (GET /api/verify/<код>) і підставляє підтверджений номер у замовлення.
+// Код зберігається в браузері гостя, тож наступного разу підтверджувати номер не треба.
+const VERIFY_DAYS = 90;
+const pending = new Map();   // код → { created, base }
+const tgPending = new Map(); // Telegram user id → код
+const verifyLimiter = rateLimit(15, 10 * 60 * 1000);
+function verifyActive() { return getSetting('verify_phone') !== '0' && !!getSetting('telegram_token') && !!bot.username; }
+
+app.post('/api/verify/start', verifyLimiter, (req, res) => {
+  if (!verifyActive()) return res.status(400).json({ error: 'Підтвердження номера зараз вимкнене' });
+  const now = Date.now();
+  for (const [k, p] of pending) if (now - p.created > 30 * 60 * 1000) pending.delete(k);
+  if (pending.size > 5000) return res.status(429).json({ error: 'Спробуйте трохи пізніше' });
+  const code = crypto.randomBytes(12).toString('base64url');
+  pending.set(code, { created: now, base: baseUrl(req) });
+  res.json({ code, link: `https://t.me/${bot.username}?start=${code}` });
+});
+app.get('/api/verify/:code', h(async (req, res) => {
+  const r = await verifiedRow(req.params.code);
+  if (r) return res.json({ verified: true, phone: r.phone });
+  res.json({ verified: false, pending: pending.has(req.params.code) });
+}));
+async function verifiedRow(code) {
+  if (!/^[\w-]{10,40}$/.test(code || '')) return null;
+  const r = await get('SELECT * FROM phone_verifications WHERE code=?', code);
+  return r && Date.now() - r.verified_at < VERIFY_DAYS * 864e5 ? r : null;
+}
+// Повертає номер для замовлення: підтверджений через Telegram або (якщо перевірку вимкнено) введений вручну
+async function checkGuestPhone(body, phone) {
+  if (!verifyActive()) return isPhone(phone) ? { phone: clean(phone, 20), label: '' } : { error: 'Вкажіть телефон' };
+  const r = await verifiedRow(body.verify_code);
+  if (!r) return { error: 'Підтвердіть свій номер телефону через Telegram', status: 403 };
+  return { phone: r.phone, label: ' ✅' + (r.tg_name ? ` (Telegram: ${r.tg_name})` : ' (номер підтверджено)') };
+}
+
+// Бот читає повідомлення методом long polling: вебхук і окрема адреса не потрібні
+const bot = { token: '', username: '', offset: 0 };
+async function tg(method, params = {}, timeoutMs = 15000) {
+  const r = await fetch(`${process.env.TELEGRAM_API || 'https://api.telegram.org'}/bot${bot.token}/${method}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(params), signal: AbortSignal.timeout(timeoutMs),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!j.ok) { const e = new Error(j.description || 'HTTP ' + r.status); e.code = j.error_code; throw e; }
+  return j.result;
+}
+async function botLoop() {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  for (;;) {
+    const token = getSetting('telegram_token');
+    if (!token) { bot.token = bot.username = ''; await sleep(10000); continue; }
+    try {
+      if (token !== bot.token) {
+        bot.token = token; bot.username = ''; bot.offset = 0;
+        const me = await tg('getMe');
+        await tg('deleteWebhook').catch(() => {});
+        bot.username = me.username;
+        console.log('Telegram-бот @' + me.username + ' слухає повідомлення');
+      }
+      const updates = await tg('getUpdates', { offset: bot.offset, timeout: 50, allowed_updates: ['message'] }, 60000);
+      for (const u of updates) {
+        bot.offset = u.update_id + 1;
+        try { await onBotMessage(u.message); } catch (e) { console.error('Бот:', e.message); }
+      }
+    } catch (e) {
+      if (e.code === 401 || e.code === 404) { bot.username = ''; console.error('Telegram: невірний токен бота'); await sleep(60000); bot.token = ''; continue; }
+      if (e.code !== 409) console.error('Telegram:', e.message); // 409: інша копія сервера ще читає бота (під час оновлення)
+      await sleep(5000);
+    }
+  }
+}
+async function onBotMessage(m) {
+  if (!m || !m.chat || m.chat.type !== 'private' || !m.from) return; // повідомлення з групи персоналу ігноруємо
+  const say = (text, extra = {}) => tg('sendMessage', { chat_id: m.chat.id, text, ...extra });
+  const site = getSetting('name');
+  const askBtn = { reply_markup: { keyboard: [[{ text: '📱 Поділитися номером', request_contact: true }]], resize_keyboard: true, one_time_keyboard: true } };
+  const text = m.text || '';
+  if (text.startsWith('/start')) {
+    const code = text.split(/\s+/)[1];
+    if (code && pending.has(code)) {
+      tgPending.set(m.from.id, code);
+      if (tgPending.size > 5000) tgPending.delete(tgPending.keys().next().value);
+      return say(`Вітаємо! Це «${site}».\n\nЩоб підтвердити ваш номер для замовлення, натисніть кнопку «📱 Поділитися номером» внизу екрана.`, askBtn);
+    }
+    if (code) return say('Посилання вже застаріло. Поверніться на сайт, оновіть сторінку й натисніть «Підтвердити номер» ще раз.');
+    return say(`Цей бот підтверджує номер телефону для замовлень на сайті «${site}». Оформіть замовлення на сайті й натисніть «Підтвердити номер у Telegram».`);
+  }
+  if (m.contact) {
+    if (m.contact.user_id !== m.from.id) return say('Надішліть, будь ласка, саме свій номер кнопкою «📱 Поділитися номером».', askBtn);
+    const code = tgPending.get(m.from.id), p = code && pending.get(code);
+    if (!p) return say('Спершу натисніть «Підтвердити номер у Telegram» на сайті.', { reply_markup: { remove_keyboard: true } });
+    let phone = String(m.contact.phone_number).replace(/[^\d]/g, '');
+    phone = '+' + phone;
+    const tgName = m.from.username ? '@' + m.from.username : [m.from.first_name, m.from.last_name].filter(Boolean).join(' ');
+    await run('INSERT OR REPLACE INTO phone_verifications(code,phone,tg_user_id,tg_name,verified_at) VALUES(?,?,?,?,?)', code, phone, m.from.id, clean(tgName, 60), Date.now());
+    pending.delete(code); tgPending.delete(m.from.id);
+    await say(`✅ Номер ${phone} підтверджено.\n\nПоверніться на сайт і завершіть замовлення.`, { reply_markup: { remove_keyboard: true } });
+    return say('Повернутися на сайт:', { reply_markup: { inline_keyboard: [[{ text: '🐟 Відкрити сайт', url: p.base + '/#book' }]] } }).catch(() => {});
+  }
+  if (tgPending.has(m.from.id)) return say('Натисніть кнопку «📱 Поділитися номером» внизу екрана.', askBtn);
+}
 
 // ---------- Вхід для власника ----------
 const loginLimiter = rateLimit(8, 15 * 60 * 1000);
@@ -368,10 +482,11 @@ A.post('/hero', upload.single('photo'), h(async (req, res) => {
 }));
 
 // Налаштування
-const EDITABLE = ['name', 'tagline', 'address', 'phone', 'hours', 'open_time', 'close_time', 'instagram', 'tiktok', 'maps_url', 'booking_enabled', 'takeaway_enabled', 'telegram_token', 'telegram_chat_id', 'google_verification'];
+const EDITABLE = ['name', 'tagline', 'address', 'phone', 'hours', 'open_time', 'close_time', 'instagram', 'tiktok', 'maps_url', 'booking_enabled', 'takeaway_enabled', 'telegram_token', 'telegram_chat_id', 'google_verification', 'verify_phone'];
 A.get('/settings', (req, res) => {
   const o = {}; for (const k of EDITABLE) o[k] = getSetting(k);
   o.telegram_token = o.telegram_token ? '••••' + o.telegram_token.slice(-4) : '';
+  o.bot_username = bot.username;
   res.json(o);
 });
 A.put('/settings', h(async (req, res) => {
@@ -411,6 +526,7 @@ app.use((err, req, res, next) => {
   await migrateFromDisk();
   for (const r of await all('SELECT key,value FROM settings')) settings.set(r.key, r.value ?? '');
   await seed();
+  botLoop();
   app.listen(PORT, () => console.log(`«${getSetting('name')}» працює: http://localhost:${PORT}  ·  адмінка: http://localhost:${PORT}/admin  ·  база: ${REMOTE ? 'Turso' : LOCAL_DB}`));
 })().catch((e) => { console.error('Не вдалося запустити сервер:', e); process.exit(1); });
 
@@ -509,7 +625,7 @@ async function notify(text) {
   const token = getSetting('telegram_token'), chat = getSetting('telegram_chat_id');
   if (!token || !chat) return false;
   try {
-    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chat, text }) });
+    const r = await fetch(`${process.env.TELEGRAM_API || 'https://api.telegram.org'}/bot${token}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chat, text }) });
     return r.ok;
   } catch (e) { console.error('Telegram:', e.message); return false; }
 }

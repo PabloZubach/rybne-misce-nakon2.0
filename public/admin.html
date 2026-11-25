@@ -139,6 +139,8 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase}
         <h3 class="h3">Сповіщення в Telegram</h3>
         <p class="sub">Створіть бота через @BotFather і вставте токен. Напишіть боту /start, а потім дізнайтесь свій chat ID через @userinfobot. Для групи: додайте бота в групу.</p>
         <div class="grid2"><div><label>Токен бота</label><input name="telegram_token" autocomplete="off"></div><div><label>Chat ID</label><input name="telegram_chat_id" autocomplete="off"></div></div>
+        <div class="mt"><label class="check"><input type="checkbox" name="verify_phone"> Перевіряти номер гостя через Telegram</label></div>
+        <p class="sub" style="margin-top:6px">Перед замовленням гість підтверджує номер у вашому боті кнопкою «Поділитися номером». Чужий номер так не вписати. <span id="bot-name"></span></p>
         <div class="row mt"><button class="btn dark">Зберегти</button><button type="button" class="btn soft" onclick="testTg()">Надіслати тест у Telegram</button></div>
         <div id="set-msg"></div>
       </form>
@@ -311,6 +313,7 @@ async function loadStats() {
 async function loadSettings() {
   const s = await api('/settings'), f = document.querySelector('[data-view=settings] form');
   for (const [k, v] of Object.entries(s)) { const el = f.elements[k]; if (!el) continue; if (el.type === 'checkbox') el.checked = v !== '0'; else el.value = v; }
+  $('bot-name').textContent = s.bot_username ? `Ваш бот: @${s.bot_username}.` : (s.telegram_token ? 'Бот не відповідає: перевірте токен.' : 'Працює, коли вписано токен бота.');
 }
 async function saveSettings(e) {
   e.preventDefault(); const f = e.target, body = {};
